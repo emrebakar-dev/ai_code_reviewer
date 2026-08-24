@@ -131,11 +131,15 @@ if analyze_button or "last_result" in st.session_state:
 
     if analyze_button:
         if not code_content.strip():
-            st.error("Lütfen analiz edilecek geçerli bir Python kodu girin.")
+            st.error("Lütfen analiz edilecek geçerli bir kaynak kod girin.")
             st.stop()
 
-        # Geçici dosyaya yazıp analiz et
-        with tempfile.NamedTemporaryFile(suffix=".py", mode="w", encoding="utf-8", delete=False) as tmp:
+        # Orijinal dosyanın uzantısını koru (.cpp, .c, .py vb.)
+        file_ext = os.path.splitext(file_display_name)[1] if file_display_name else ".py"
+        if not file_ext:
+            file_ext = ".py"
+
+        with tempfile.NamedTemporaryFile(suffix=file_ext, mode="w", encoding="utf-8", delete=False) as tmp:
             tmp.write(code_content)
             tmp_path = tmp.name
 
@@ -188,7 +192,7 @@ if analyze_button or "last_result" in st.session_state:
     col1, col2, col3, col4, col5, col6 = st.columns(6)
     col1.metric("Toplam Satır", static_res.total_lines)
     col2.metric("Fonksiyon", static_res.function_count)
-    col3.metric("Sınıf", static_res.class_count)
+    col3.metric("Sınıf/Struct", static_res.class_count)
     col4.metric("🔴 High Risk", counts["HIGH"])
     col5.metric("🟡 Medium Risk", counts["MEDIUM"])
     col6.metric("🟢 Low Risk", counts["LOW"])
@@ -205,7 +209,8 @@ if analyze_button or "last_result" in st.session_state:
 
     # TAB 1: Statik Analiz
     with tab_static:
-        st.markdown("#### 🔍 Python AST Statik Analiz Bulguları")
+        lang_title = "C/C++ Statik Analiz" if static_res.language == "cpp" else "Python AST Statik Analiz"
+        st.markdown(f"#### 🔍 {lang_title} Bulguları")
         if static_res.syntax_error:
             st.error(f"⚠️ Syntax Hatası: {static_res.syntax_error}")
         elif not static_res.findings:
