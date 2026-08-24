@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+venv/
+.venv/
+env/
+.env/
+
+# Ortam dosyaları (API anahtarı içerir - GitHub'a YÜKLENMEZ)
+.env
+.env.local
+*.env
+
+# Raporlar (isteğe bağlı — kendi tercihiniz)
+reports/
+
+# IDE & Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# macOS
+.DS_Store
+
+# Log dosyaları
+*.log
+log.txt
