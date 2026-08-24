@@ -1,10 +1,10 @@
-# ⚡ AI Code Review Assistant
+# AI Code Review Assistant
 
 Python dosyalarını **iki aşamalı (Statik Analiz + Yapay Zekâ)** olarak inceleyen, hem **Web Arayüzü (Streamlit UI)** hem de **Terminal (CLI)** destekli modüler kod inceleme aracı.
 
 ---
 
-## 🎯 Projenin Amacı
+## Projenin Amacı
 
 Yalnızca LLM'e kod gönderip yorum almak yerine, iki aşamalı bir analiz mimarisi kullanır:
 1. **Statik Kod Analizi:** Python `ast` modülü ile kod çalıştırılmadan deterministik ve kesin güvenlik/kalite bulgularının tespiti.
@@ -14,9 +14,9 @@ Statik analiz sonuçları ile AI sonuçları raporda birbirinden açıkça ayrı
 
 ---
 
-## ✨ Özellikler
+## Özellikler
 
-### 🔍 Statik Analiz (LLM/İnternet Bağımsız)
+### Statik Analiz (LLM/İnternet Bağımsız)
 - **Syntax Hataları:** Parse edilemeyen kodların tespiti.
 - **Tehlikeli Fonksiyonlar:** `eval()`, `exec()` kullanımı.
 - **Kabuk Enjeksiyon Riskleri:** `subprocess(..., shell=True)`, `os.system()`, `os.popen()` kullanımı.
@@ -24,20 +24,20 @@ Statik analiz sonuçları ile AI sonuçları raporda birbirinden açıkça ayrı
 - **Exception Yönetimi:** Çıplak `except:` veya genel `except Exception:` kullanımı.
 - **Kod Kokuları:** 50+ satır uzun fonksiyonlar, 6+ parametre alan imzalar, 4+ derinlikte iç içe geçmiş mantık blokları.
 
-### 🤖 AI Code Review
+### AI Code Review
 - **Kategoriler:** Potential Bugs, Security, Performance, Code Quality, Readability, Maintainability.
 - **Önem Seviyeleri:** `HIGH`, `MEDIUM`, `LOW`.
 - **Otomatik Onarım (Auto-Repair):** Yanıt yarım kalsa bile kesintiye uğramış JSON'u otomatik onarır.
 - **Hızlı Entegrasyon:** Groq, Ollama (Local), Gemini veya OpenAI ile tam uyumlu.
 
-### 📊 Arayüz ve Raporlama
+### Arayüz ve Raporlama
 - **Web UI (Streamlit):** Görsel kartlar, dosya yükleme/kod yapıştırma, renkli risk sayaçları ve canlı rapor indirme.
 - **Terminal (CLI):** ANSI renkli ve sembollü düzenli çıktı.
 - **TXT Raporu:** Her analiz sonunda `reports/` klasörüne zaman damgalı `.txt` rapor kaydı.
 
 ---
 
-## 🚀 Kurulum
+## Kurulum
 
 ### 1. Depoyu klonlayın
 
@@ -80,7 +80,7 @@ OPENAI_MODEL=groq/compound-mini
 
 ---
 
-## 📖 Kullanım
+## Kullanım
 
 ### 1. Web Arayüzü (Streamlit UI)
 
@@ -101,7 +101,7 @@ python main.py examples/hatali_kod.py --no-ai
 
 ---
 
-## 🏗️ Proje Mimarisi
+## Proje Mimarisi
 
 ```
 ai_code_reviewer/
