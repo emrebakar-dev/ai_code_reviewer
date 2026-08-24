@@ -3,7 +3,6 @@ import sys
 import tempfile
 import streamlit as st
 
-# .env yükle
 try:
     from dotenv import load_dotenv
     load_dotenv()
@@ -14,9 +13,6 @@ from analyzer import StaticAnalyzer
 from llm_reviewer import LLMReviewer, AIReviewResult
 from reporter import Reporter
 
-# ---------------------------------------------------------------------------
-# Streamlit Sayfa Yapılandırması
-# ---------------------------------------------------------------------------
 st.set_page_config(
     page_title="AI Code Review Assistant",
     page_icon="⚡",
@@ -24,9 +20,6 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# ---------------------------------------------------------------------------
-# CSS Stilleri
-# ---------------------------------------------------------------------------
 st.markdown("""
 <style>
     .main-header {
@@ -73,15 +66,9 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# ---------------------------------------------------------------------------
-# Başlık
-# ---------------------------------------------------------------------------
 st.markdown('<div class="main-header">⚡ AI Code Review Assistant</div>', unsafe_allow_html=True)
 st.markdown('<div class="sub-header">Yapay Zekâ ve Statik Analiz Destekli Kod İnceleme Sistemi</div>', unsafe_allow_html=True)
 
-# ---------------------------------------------------------------------------
-# Yan Menü (Sidebar)
-# ---------------------------------------------------------------------------
 with st.sidebar:
     st.header("⚙️ Ayarlar & Girdi")
 
@@ -129,9 +116,6 @@ with st.sidebar:
 
     analyze_button = st.button("🔍 Kodu Analiz Et", type="primary", use_container_width=True)
 
-# ---------------------------------------------------------------------------
-# Analiz Mantığı & Görüntüleme
-# ---------------------------------------------------------------------------
 if analyze_button or "last_result" in st.session_state:
 
     if analyze_button:
@@ -139,7 +123,6 @@ if analyze_button or "last_result" in st.session_state:
             st.error("Lütfen analiz edilecek geçerli bir kaynak kod girin.")
             st.stop()
 
-        # Orijinal dosyanın uzantısını koru (.cpp, .c, .py vb.)
         file_ext = os.path.splitext(file_display_name)[1] if file_display_name else ".py"
         if not file_ext:
             file_ext = ".py"
@@ -161,7 +144,6 @@ if analyze_button or "last_result" in st.session_state:
                     llm_reviewer.model = selected_model
                 ai_result = llm_reviewer.review(source_code=code_content, filepath=file_display_name)
 
-        # Raporu da kaydet
         reporter = Reporter(static_result, ai_result)
         report_path = reporter.save_report()
 
@@ -182,7 +164,6 @@ if analyze_button or "last_result" in st.session_state:
     static_res = res["static"]
     ai_res = res["ai"]
 
-    # --- ÖZET METRİKLERİ ---
     st.markdown("### 📊 Analiz Özeti")
 
     all_findings = list(static_res.findings)
@@ -204,7 +185,6 @@ if analyze_button or "last_result" in st.session_state:
 
     st.markdown("---")
 
-    # --- TABLAR ---
     tab_static, tab_ai, tab_code, tab_report = st.tabs([
         "🔍 Statik Analiz Bulguları",
         "🤖 AI Review Bulguları",
@@ -212,7 +192,6 @@ if analyze_button or "last_result" in st.session_state:
         "📝 Rapor & Kayıtlar"
     ])
 
-    # TAB 1: Statik Analiz
     with tab_static:
         lang_title = "C/C++ Statik Analiz" if static_res.language == "cpp" else "Python AST Statik Analiz"
         st.markdown(f"#### 🔍 {lang_title} Bulguları")
@@ -237,7 +216,6 @@ if analyze_button or "last_result" in st.session_state:
                 </div>
                 """, unsafe_allow_html=True)
 
-    # TAB 2: AI Review
     with tab_ai:
         st.markdown("#### 🤖 Yapay Zekâ Kod İnceleme Bulguları")
         if ai_res.skipped:
@@ -272,12 +250,10 @@ if analyze_button or "last_result" in st.session_state:
                 </div>
                 """, unsafe_allow_html=True)
 
-    # TAB 3: Kaynak Kod
     with tab_code:
         st.markdown(f"#### 📄 Incelenen Dosya: `{res['filename']}`")
         st.code(res["code"], language="python", line_numbers=True)
 
-    # TAB 4: Raporlar
     with tab_report:
         st.markdown("#### 📝 Analiz Raporu")
         report_path = res.get("report_path")
