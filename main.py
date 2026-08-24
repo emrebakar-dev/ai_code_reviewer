@@ -34,12 +34,16 @@ def parse_args():
     return parser.parse_args()
 
 
+SUPPORTED_EXTENSIONS = (".py", ".c", ".cpp", ".cc", ".cxx", ".h", ".hpp")
+
+
 def validate_file(filepath: str) -> bool:
     if not os.path.isfile(filepath):
         print(f"\n❌ Hata: Dosya bulunamadı: '{filepath}'")
         return False
-    if not filepath.endswith(".py"):
-        print(f"\n⚠️  Uyarı: '{filepath}' bir Python dosyası gibi görünmüyor.")
+    ext = os.path.splitext(filepath)[1].lower()
+    if ext not in SUPPORTED_EXTENSIONS:
+        print(f"\n⚠️  Uyarı: '{filepath}' desteklenen bir dosya uzantısına sahip değil ({', '.join(SUPPORTED_EXTENSIONS)}).")
         print("   Devam etmek için Enter'a basın veya Ctrl+C ile çıkın...")
         try:
             input()

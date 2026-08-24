@@ -3,7 +3,6 @@ import re
 from dataclasses import dataclass, field
 from typing import Optional
 
-
 MAX_FUNCTION_LINES  = 50
 MAX_FUNCTION_PARAMS = 6
 MAX_NESTING_DEPTH   = 4
@@ -38,6 +37,7 @@ class Finding:
 class StaticAnalysisResult:
     filepath: str
     source_code: str
+    language: str = "python"
     syntax_error: Optional[str] = None
     total_lines: int = 0
     functions: list = field(default_factory=list)
@@ -55,9 +55,27 @@ class StaticAnalysisResult:
 
 
 class StaticAnalyzer:
+    """Uzantıya göre Python veya C/C++ analizörünü çalıştıran ana fabrika sınıfı."""
+
     def analyze(self, filepath: str) -> StaticAnalysisResult:
         source_code = self._read_file(filepath)
-        result = StaticAnalysisResult(filepath=filepath, source_code=source_code)
+        ext = filepath.split(".")[-1].lower() if "." in filepath else ""
+
+        if ext in ("c", "cpp", "cc", "cxx", "h", "hpp"):
+            return CPPAnalyzer().analyze(filepath, source_code)
+        else:
+            return PythonAnalyzer().analyze(filepath, source_code)
+
+    def _read_file(self, filepath: str) -> str:
+        with open(filepath, "r", encoding="utf-8", errors="replace") as f:
+            return f.read()
+
+
+class PythonAnalyzer:
+    """Python AST tabanlı analizör."""
+
+    def analyze(self, filepath: str, source_code: str) -> StaticAnalysisResult:
+        result = StaticAnalysisResult(filepath=filepath, source_code=source_code, language="python")
         result.total_lines = len(source_code.splitlines())
 
         tree = self._parse(source_code, result)
@@ -74,10 +92,6 @@ class StaticAnalyzer:
 
         self._check_hardcoded_secrets_regex(source_code, result)
         return result
-
-    def _read_file(self, filepath: str) -> str:
-        with open(filepath, "r", encoding="utf-8", errors="replace") as f:
-            return f.read()
 
     def _parse(self, source_code: str, result: StaticAnalysisResult):
         try:
@@ -120,6 +134,121 @@ class StaticAnalyzer:
                                 message=f"Hard-coded '{keyword}' değeri tespit edildi.",
                                 suggestion="Hassas değerleri .env dosyasına veya environment variable'a taşıyın.",
                             ))
+
+
+class CPPAnalyzer:
+    """C / C++ için statik kod analizörü (Regex ve desen taraması)."""
+
+    UNSAFE_FUNCTIONS = {
+        "strcpy": ("HIGH", "Buffer Overflow riski: 'strcpy' sınır kontrolü yapmaz.", "'strncpy' veya std::string kullanın."),
+        "strcat": ("HIGH", "Buffer Overflow riski: 'strcat' sınır kontrolü yapmaz.", "'strncat' veya std::string kullanın."),
+        "gets": ("HIGH", "Kritik Güvenlik Riski: 'gets' kullanımı sınırsız bellek yazımına neden olur.", "'fgets' veya std::cin kullanın."),
+        "sprintf": ("MEDIUM", "Potansiyel Buffer Overflow: 'sprintf' boyutu denetlemez.", "'snprintf' veya std::ostringstream kullanın."),
+        "system": ("HIGH", "Kabuk Enjeksiyonu Riski: 'system()' harici komut çalıştırır.", "Platforma özel güvenli API'ler veya execve kullanın."),
+    }
+
+    def analyze(self, filepath: str, source_code: str) -> StaticAnalysisResult:
+        result = StaticAnalysisResult(filepath=filepath, source_code=source_code, language="cpp")
+        lines = source_code.splitlines()
+        result.total_lines = len(lines)
+
+        self._extract_cpp_structures(lines, result)
+        self._check_unsafe_functions(lines, result)
+        self._check_dangerous_patterns(lines, result)
+        self._check_secrets(lines, result)
+
+        return result
+
+    def _extract_cpp_structures(self, lines: list, result: StaticAnalysisResult):
+        # Includes
+        for line in lines:
+            inc_match = re.match(r'^\s*#include\s+[<"]([^>"]+)[>"]', line)
+            if inc_match:
+                result.imports.append(inc_match.group(1))
+
+        # Classes & Structs
+        for idx, line in enumerate(lines, start=1):
+            cls_match = re.search(r'\b(class|struct)\s+([A-Za-z_][A-Za-z0-9_]*)', line)
+            if cls_match and not line.strip().startswith("//"):
+                result.classes.append({"name": cls_match.group(2), "line": idx})
+
+        # Functions
+        func_regex = re.compile(
+            r'^(?:[a-zA-Z_][a-zA-Z0-9_]*\s+)+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(([^)]*)\)\s*\{'
+        )
+        for idx, line in enumerate(lines, start=1):
+            if line.strip().startswith("//") or line.strip().startswith("#"):
+                continue
+            match = func_regex.search(line)
+            if match:
+                name = match.group(1)
+                if name not in ("if", "while", "for", "switch", "catch"):
+                    params = [p.strip() for p in match.group(2).split(",") if p.strip()]
+                    result.functions.append({
+                        "name": name,
+                        "line": idx,
+                        "param_count": len(params),
+                        "length": 0
+                    })
+
+    def _check_unsafe_functions(self, lines: list, result: StaticAnalysisResult):
+        for idx, line in enumerate(lines, start=1):
+            stripped = line.strip()
+            if stripped.startswith("//") or stripped.startswith("/*"):
+                continue
+
+            for func, (sev, msg, sug) in self.UNSAFE_FUNCTIONS.items():
+                if re.search(rf'\b{func}\s*\(', stripped):
+                    result.findings.append(Finding(
+                        severity=sev,
+                        category="Security",
+                        line=idx,
+                        message=msg,
+                        suggestion=sug
+                    ))
+
+    def _check_dangerous_patterns(self, lines: list, result: StaticAnalysisResult):
+        for idx, line in enumerate(lines, start=1):
+            stripped = line.strip()
+            if stripped.startswith("//"):
+                continue
+
+            # Format String Vulnerability (örn: printf(str);)
+            if re.search(r'\bprintf\s*\(\s*[a-zA-Z_][a-zA-Z0-9_]*\s*\)\s*;', stripped):
+                result.findings.append(Finding(
+                    severity="HIGH",
+                    category="Security",
+                    line=idx,
+                    message="Format String Açığı: 'printf' doğrudan değişkene paslanmış.",
+                    suggestion="Format belirteci kullanın: printf(\"%s\", var);"
+                ))
+
+            # Malloc without NULL check or Raw Pointer Memory Leak risk
+            if re.search(r'\b(malloc|calloc|realloc)\s*\(', stripped):
+                result.findings.append(Finding(
+                    severity="MEDIUM",
+                    category="Memory Safety",
+                    line=idx,
+                    message="Dinamik bellek tahsisi: NULL kontrolü ve free() unutulmamalıdır.",
+                    suggestion="C++ yazıyorsanız RAII ve std::unique_ptr / std::make_unique tercih edin."
+                ))
+
+    def _check_secrets(self, lines: list, result: StaticAnalysisResult):
+        for idx, line in enumerate(lines, start=1):
+            stripped = line.strip()
+            if stripped.startswith("//"):
+                continue
+            for kw in SECRET_KEYWORDS:
+                pattern = re.compile(rf'{kw}\s*=\s*["\']([^"\']+)["\']', re.IGNORECASE)
+                match = pattern.search(stripped)
+                if match and SECRET_VALUE_PATTERN.match(match.group(1)):
+                    result.findings.append(Finding(
+                        severity="HIGH",
+                        category="Security",
+                        line=idx,
+                        message=f"Hard-coded C/C++ '{kw}' değeri tespit edildi.",
+                        suggestion="Hassas değerleri ortam değişkenlerinden veya güvenli bir yapılandırma dosyasından okuyun."
+                    ))
 
 
 class _CodeVisitor(ast.NodeVisitor):

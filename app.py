@@ -88,8 +88,9 @@ with st.sidebar:
     if source_type == "Örnek Dosyalar":
         examples_dir = "examples"
         available_files = []
+        valid_exts = (".py", ".c", ".cpp", ".cc", ".cxx", ".h", ".hpp")
         if os.path.exists(examples_dir):
-            available_files = [f for f in os.listdir(examples_dir) if f.endswith(".py")]
+            available_files = [f for f in os.listdir(examples_dir) if f.endswith(valid_exts)]
 
         selected_example = st.selectbox("Örnek Dosya Seç:", available_files if available_files else ["hatali_kod.py"])
         if selected_example:
@@ -100,7 +101,7 @@ with st.sidebar:
                 file_display_name = selected_example
 
     elif source_type == "Dosya Yükle":
-        uploaded_file = st.file_uploader("Python Dosyası Yükleyin (.py)", type=["py"])
+        uploaded_file = st.file_uploader("Kod Dosyası Yükleyin (.py, .c, .cpp, .h)", type=["py", "c", "cpp", "cc", "h", "hpp"])
         if uploaded_file is not None:
             code_content = uploaded_file.getvalue().decode("utf-8", errors="replace")
             file_display_name = uploaded_file.name

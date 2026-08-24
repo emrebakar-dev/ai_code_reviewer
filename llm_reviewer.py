@@ -41,11 +41,11 @@ class AIReviewResult:
     parse_failed: bool = False  # True: model cevap verdi ama JSON parse edilemedi
 
 
-SYSTEM_PROMPT = """You are a senior Python code reviewer. Your task is to analyze the provided Python source code and identify issues.
+SYSTEM_PROMPT = """You are a senior multi-language software auditor and code reviewer. Your task is to analyze the provided source code (Python, C, C++, etc.) and identify issues.
 
 Review the code in these categories:
 - Potential Bugs
-- Security
+- Security (Memory safety, Buffer Overflow, Injection, Hard-coded secrets)
 - Performance
 - Code Quality
 - Readability
@@ -97,10 +97,11 @@ class LLMReviewer:
         try:
             client = OpenAI(api_key=self.api_key, base_url=self.base_url)
 
+            ext = filepath.split(".")[-1].lower() if "." in filepath else "code"
             if "localhost" in self.base_url or "11434" in self.base_url:
-                user_content = f"/no_think\n\nFile: {filepath}\n\n```python\n{source_code}\n```"
+                user_content = f"/no_think\n\nFile: {filepath}\n\n```{ext}\n{source_code}\n```"
             else:
-                user_content = f"File: {filepath}\n\n```python\n{source_code}\n```"
+                user_content = f"File: {filepath}\n\n```{ext}\n{source_code}\n```"
 
             response = client.chat.completions.create(
                 model=self.model,
