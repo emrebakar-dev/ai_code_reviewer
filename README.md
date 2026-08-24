@@ -42,7 +42,7 @@ Statik analiz sonuçları ile AI sonuçları raporda birbirinden açıkça ayrı
 ### 1. Depoyu klonlayın
 
 ```bash
-git clone https://github.com/KULLANICI_ADI/ai_code_reviewer.git
+git clone https://github.com/emrebakar-dev/ai_code_reviewer.git
 cd ai_code_reviewer
 ```
 
@@ -117,9 +117,3 @@ ai_code_reviewer/
 ├── examples/        # Test için örnek hatalı Python dosyaları
 └── reports/         # Otomatik oluşturulan zaman damgalı analiz raporları
 ```
-
----
-
-## 📝 Lisans
-
-MIT
