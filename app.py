@@ -33,38 +33,43 @@ st.markdown("""
         font-size: 2.2rem;
         font-weight: 700;
         margin-bottom: 0.2rem;
-        color: #1E88E5;
+        color: #4FC3F7;
     }
     .sub-header {
         font-size: 1rem;
-        color: #666;
+        color: #B0BEC5;
         margin-bottom: 1.5rem;
     }
     .card-high {
-        background-color: #FFEBEE;
-        border-left: 5px solid #E53935;
+        background-color: #2C1B1D;
+        border-left: 5px solid #FF5252;
+        color: #FFFFFF;
         padding: 1rem;
-        border-radius: 6px;
-        margin-bottom: 0.8rem;
+        border-radius: 8px;
+        margin-bottom: 0.9rem;
     }
     .card-medium {
-        background-color: #FFF8E1;
-        border-left: 5px solid #FB8C00;
+        background-color: #2E2519;
+        border-left: 5px solid #FFB74D;
+        color: #FFFFFF;
         padding: 1rem;
-        border-radius: 6px;
-        margin-bottom: 0.8rem;
+        border-radius: 8px;
+        margin-bottom: 0.9rem;
     }
     .card-low {
-        background-color: #E8F5E9;
-        border-left: 5px solid #43A047;
+        background-color: #1B2B1E;
+        border-left: 5px solid #66BB6A;
+        color: #FFFFFF;
         padding: 1rem;
-        border-radius: 6px;
-        margin-bottom: 0.8rem;
+        border-radius: 8px;
+        margin-bottom: 0.9rem;
     }
-    .badge-high { color: #E53935; font-weight: bold; }
-    .badge-medium { color: #FB8C00; font-weight: bold; }
-    .badge-low { color: #43A047; font-weight: bold; }
-    .suggestion-text { color: #555; font-style: italic; font-size: 0.93rem; }
+    .badge-high { color: #FF5252; font-weight: bold; font-size: 1.05rem; }
+    .badge-medium { color: #FFB74D; font-weight: bold; font-size: 1.05rem; }
+    .badge-low { color: #66BB6A; font-weight: bold; font-size: 1.05rem; }
+    .card-title { color: #FFFFFF; font-size: 1.1rem; font-weight: 600; }
+    .card-body-text { color: #F5F5F5; font-size: 1.02rem; margin-top: 6px; line-height: 1.4; display: block; }
+    .suggestion-text { color: #FFECB3; font-style: italic; font-size: 0.95rem; margin-top: 6px; display: block; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -107,7 +112,7 @@ with st.sidebar:
             file_display_name = uploaded_file.name
 
     elif source_type == "Kod Yapıştır":
-        code_content = st.text_area("Python Kodunu Buraya Yapıştırın:", height=250, value="def hello():\n    eval('print(123)')\n")
+        code_content = st.text_area("Python / C++ Kodunu Buraya Yapıştırın:", height=250, value="def hello():\n    eval('print(123)')\n")
         file_display_name = "snippet.py"
 
     st.markdown("---")
@@ -226,9 +231,9 @@ if analyze_button or "last_result" in st.session_state:
 
                 st.markdown(f"""
                 <div class="{card_class}">
-                    <span class="{badge_class}">{badge_symbol} [{sev}]</span> <b>{f.category}</b> &nbsp;|&nbsp; <code>{line_str}</code>
-                    <br><span style="font-size:1rem; margin-top:4px; display:inline-block;">{f.message}</span>
-                    {f'<br><span class="suggestion-text"><b>>> Öneri:</b> {f.suggestion}</span>' if f.suggestion else ''}
+                    <span class="{badge_class}">{badge_symbol} [{sev}]</span> <span class="card-title">{f.category}</span> &nbsp;|&nbsp; <code>{line_str}</code>
+                    <span class="card-body-text">{f.message}</span>
+                    {f'<span class="suggestion-text"><b>>> Öneri:</b> {f.suggestion}</span>' if f.suggestion else ''}
                 </div>
                 """, unsafe_allow_html=True)
 
@@ -261,9 +266,9 @@ if analyze_button or "last_result" in st.session_state:
 
                 st.markdown(f"""
                 <div class="{card_class}">
-                    <span class="{badge_class}">{badge_symbol} [{sev}]</span> <b>{f.category}</b> {f'&nbsp;|&nbsp; <code>{meta_str}</code>' if meta_str else ''}
-                    <br><span style="font-size:1rem; margin-top:4px; display:inline-block;">{f.message}</span>
-                    {f'<br><span class="suggestion-text"><b>>> Çözüm Önerisi:</b> {f.suggestion}</span>' if f.suggestion else ''}
+                    <span class="{badge_class}">{badge_symbol} [{sev}]</span> <span class="card-title">{f.category}</span> {f'&nbsp;|&nbsp; <code>{meta_str}</code>' if meta_str else ''}
+                    <span class="card-body-text">{f.message}</span>
+                    {f'<span class="suggestion-text"><b>>> Çözüm Önerisi:</b> {f.suggestion}</span>' if f.suggestion else ''}
                 </div>
                 """, unsafe_allow_html=True)
 

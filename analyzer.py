@@ -144,13 +144,18 @@ class CPPAnalyzer:
         "strcat": ("HIGH", "Buffer Overflow riski: 'strcat' sınır kontrolü yapmaz.", "'strncat' veya std::string kullanın."),
         "gets": ("HIGH", "Kritik Güvenlik Riski: 'gets' kullanımı sınırsız bellek yazımına neden olur.", "'fgets' veya std::cin kullanın."),
         "sprintf": ("MEDIUM", "Potansiyel Buffer Overflow: 'sprintf' boyutu denetlemez.", "'snprintf' veya std::ostringstream kullanın."),
+        "vsprintf": ("MEDIUM", "Potansiyel Buffer Overflow: 'vsprintf' boyutu denetlemez.", "'vsnprintf' kullanın."),
         "system": ("HIGH", "Kabuk Enjeksiyonu Riski: 'system()' harici komut çalıştırır.", "Platforma özel güvenli API'ler veya execve kullanın."),
+        "strtok": ("LOW", "Thread-Safety riski: 'strtok' global durum kullanır.", "'strtok_r' veya std::string_view tercih edin."),
     }
 
     def analyze(self, filepath: str, source_code: str) -> StaticAnalysisResult:
         result = StaticAnalysisResult(filepath=filepath, source_code=source_code, language="cpp")
-        lines = source_code.splitlines()
-        result.total_lines = len(lines)
+        
+        # Çok satırlı /* ... */ yorumlarını satır sayılarını bozmadan temizle
+        clean_code = re.sub(r'/\*.*?\*/', lambda m: '\n' * m.group(0).count('\n'), source_code, flags=re.DOTALL)
+        lines = clean_code.splitlines()
+        result.total_lines = len(source_code.splitlines())
 
         self._extract_cpp_structures(lines, result)
         self._check_unsafe_functions(lines, result)
@@ -194,7 +199,7 @@ class CPPAnalyzer:
     def _check_unsafe_functions(self, lines: list, result: StaticAnalysisResult):
         for idx, line in enumerate(lines, start=1):
             stripped = line.strip()
-            if stripped.startswith("//") or stripped.startswith("/*"):
+            if stripped.startswith("//"):
                 continue
 
             for func, (sev, msg, sug) in self.UNSAFE_FUNCTIONS.items():
@@ -223,7 +228,7 @@ class CPPAnalyzer:
                     suggestion="Format belirteci kullanın: printf(\"%s\", var);"
                 ))
 
-            # Malloc without NULL check or Raw Pointer Memory Leak risk
+            # Malloc without NULL check or Memory Leak risk
             if re.search(r'\b(malloc|calloc|realloc)\s*\(', stripped):
                 result.findings.append(Finding(
                     severity="MEDIUM",
@@ -231,6 +236,16 @@ class CPPAnalyzer:
                     line=idx,
                     message="Dinamik bellek tahsisi: NULL kontrolü ve free() unutulmamalıdır.",
                     suggestion="C++ yazıyorsanız RAII ve std::unique_ptr / std::make_unique tercih edin."
+                ))
+
+            # Raw new operator in C++
+            if re.search(r'\bnew\s+[a-zA-Z_][a-zA-Z0-9_]*\b', stripped) and "delete" not in stripped:
+                result.findings.append(Finding(
+                    severity="LOW",
+                    category="Memory Safety",
+                    line=idx,
+                    message="Ham 'new' kullanımı bellek sızıntısına (memory leak) yol açabilir.",
+                    suggestion="Smart pointer (std::make_unique / std::make_shared) kullanın."
                 ))
 
     def _check_secrets(self, lines: list, result: StaticAnalysisResult):
