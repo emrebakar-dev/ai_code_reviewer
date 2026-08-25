@@ -104,6 +104,11 @@ with st.sidebar:
 
     st.markdown("---")
     enable_ai = st.checkbox("AI İncelemesi Aktif", value=True)
+    confidence_threshold = st.slider(
+        "Minimum Güven Eşiği",
+        min_value=0.0, max_value=1.0, value=0.0, step=0.05,
+        help="Bu eşiğin altındaki bulgular gizlenir (0 = hepsi göster)"
+    )
 
     selected_model = st.text_input("AI Model:", value=os.getenv("OPENAI_MODEL", "groq/compound-mini"))
     api_key = os.getenv("OPENAI_API_KEY", "")
@@ -205,17 +210,23 @@ if analyze_button or "last_result" in st.session_state:
         elif not static_res.findings:
             st.success("✅ Statik analiz herhangi bir kural ihlali tespit etmedi.")
         else:
-            for f in static_res.findings:
+            visible = [f for f in static_res.findings if getattr(f, "confidence", 1.0) >= confidence_threshold]
+            hidden_count = len(static_res.findings) - len(visible)
+            if hidden_count > 0:
+                st.caption(f"ℹ️ {hidden_count} bulgu güven eşiği ({confidence_threshold:.2f}) altında gizlendi.")
+            if not visible:
+                st.success("✅ Seçilen güven eşiğinde görüntülenecek bulgu yok.")
+            for f in visible:
                 sev = f.severity.upper()
                 card_class = "card-high" if sev == "HIGH" else ("card-medium" if sev == "MEDIUM" else "card-low")
                 badge_class = "badge-high" if sev == "HIGH" else ("badge-medium" if sev == "MEDIUM" else "badge-low")
-                badge_symbol = "[!]" if sev == "HIGH" else ("[" if sev == "MEDIUM" else "[-]")
-
+                badge_symbol = "[!]" if sev == "HIGH" else ("[~]" if sev == "MEDIUM" else "[-]")
+                conf_label = f"| güven: {getattr(f, 'confidence', 1.0):.0%}"
                 line_str = f"Line {f.line}" if f.line else "Genel"
 
                 st.markdown(f"""
                 <div class="{card_class}">
-                    <span class="{badge_class}">{badge_symbol} [{sev}]</span> <span class="card-title">{f.category}</span> &nbsp;|&nbsp; <code>{line_str}</code>
+                    <span class="{badge_class}">{badge_symbol} [{sev}]</span> <span class="card-title">{f.category}</span> &nbsp;|&nbsp; <code>{line_str}</code> <span style="color:#888;font-size:0.85rem">{conf_label}</span>
                     <span class="card-body-text">{f.message}</span>
                     {f'<span class="suggestion-text"><b>>> Öneri:</b> {f.suggestion}</span>' if f.suggestion else ''}
                 </div>

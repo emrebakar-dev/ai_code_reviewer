@@ -12,7 +12,54 @@ SECRET_KEYWORDS = [
     "token", "auth_token", "access_token", "private_key", "client_secret",
 ]
 
-SECRET_VALUE_PATTERN = re.compile(r"^(?!.*\{)(?!<)[A-Za-z0-9+/=_\-]{8,}$")
+# Minimum 12 karakter, sadece sayıdan oluşan değerleri de dışla
+SECRET_VALUE_PATTERN = re.compile(r"^(?!.*\{)(?!<)(?!\d+$)[A-Za-z0-9+/=_\-]{12,}$")
+
+PLACEHOLDER_VALUES = {
+    "changeme", "change_me", "yourkey", "your_key", "your_key_here",
+    "example", "placeholder", "xxxx", "xxxxxxxx", "test", "testing",
+    "password", "secret", "admin", "root", "pass", "none", "null",
+    "12345678", "123456789", "abcdefgh", "todo", "fixme", "replace_me",
+    "insert_key_here", "enter_key_here", "add_key_here", "your_secret",
+    "your_token", "your_api_key", "put_your_key_here",
+}
+
+
+def _is_suppressed(line: str) -> bool:
+    """Satır # noreview veya // noreview içeriyorsa True döner."""
+    low = line.lower()
+    return "# noreview" in low or "// noreview" in low
+
+
+def _postprocess_findings(findings: list, original_lines: list) -> list:
+    """
+    1. # noreview / // noreview etiketli satırları siler.
+    2. Aynı (satır, kategori) çiftini tekrar eden bulguları tekilleştirir;
+       en yüksek severity olana öncelik verir.
+    """
+    sev_order = {"HIGH": 3, "MEDIUM": 2, "LOW": 1}
+
+    active = []
+    for f in findings:
+        if f.line and f.line <= len(original_lines):
+            if _is_suppressed(original_lines[f.line - 1]):
+                continue
+        active.append(f)
+
+    seen: dict = {}
+    deduped: list = []
+    for f in active:
+        key = (f.line, f.category)
+        if key not in seen:
+            seen[key] = len(deduped)
+            deduped.append(f)
+        else:
+            idx = seen[key]
+            existing = deduped[idx]
+            if sev_order.get(f.severity, 0) > sev_order.get(existing.severity, 0):
+                deduped[idx] = f
+
+    return deduped
 
 
 @dataclass
@@ -22,6 +69,7 @@ class Finding:
     line: Optional[int]
     message: str
     suggestion: Optional[str] = None
+    confidence: float = 1.0
 
     def to_dict(self) -> dict:
         return {
@@ -30,6 +78,7 @@ class Finding:
             "line":       self.line,
             "message":    self.message,
             "suggestion": self.suggestion,
+            "confidence": self.confidence,
         }
 
 
@@ -93,6 +142,7 @@ class PythonAnalyzer:
         result.findings  = visitor.findings
 
         self._check_hardcoded_secrets_regex(source_code, result)
+        result.findings = _postprocess_findings(result.findings, source_code.splitlines())
         return result
 
     def _parse(self, source_code: str, result: StaticAnalysisResult):
@@ -113,7 +163,7 @@ class PythonAnalyzer:
         lines = source_code.splitlines()
         for lineno, line in enumerate(lines, start=1):
             stripped = line.strip()
-            if stripped.startswith("#"):
+            if stripped.startswith("#") or _is_suppressed(line):
                 continue
             for keyword in SECRET_KEYWORDS:
                 pattern = re.compile(
@@ -123,7 +173,7 @@ class PythonAnalyzer:
                 match = pattern.search(stripped)
                 if match:
                     value = match.group(1)
-                    if SECRET_VALUE_PATTERN.match(value):
+                    if SECRET_VALUE_PATTERN.match(value) and value.lower() not in PLACEHOLDER_VALUES:
                         already = any(
                             f.line == lineno and "hard-coded" in f.message.lower()
                             for f in result.findings
@@ -135,6 +185,7 @@ class PythonAnalyzer:
                                 line=lineno,
                                 message=f"Hard-coded '{keyword}' değeri tespit edildi.",
                                 suggestion="Hassas değerleri .env dosyasına veya environment variable'a taşıyın.",
+                                confidence=0.8,
                             ))
 
 
@@ -153,8 +204,6 @@ class CPPAnalyzer:
 
     def analyze(self, filepath: str, source_code: str) -> StaticAnalysisResult:
         result = StaticAnalysisResult(filepath=filepath, source_code=source_code, language="cpp")
-        
-        # Çok satırlı /* ... */ yorumlarını satır sayılarını bozmadan temizle
         clean_code = re.sub(r'/\*.*?\*/', lambda m: '\n' * m.group(0).count('\n'), source_code, flags=re.DOTALL)
         lines = clean_code.splitlines()
         result.total_lines = len(source_code.splitlines())
@@ -164,24 +213,23 @@ class CPPAnalyzer:
         self._check_dangerous_patterns(lines, result)
         self._check_secrets(lines, result)
 
+        result.findings = _postprocess_findings(result.findings, source_code.splitlines())
         return result
 
+
     def _extract_cpp_structures(self, lines: list, result: StaticAnalysisResult):
-        # Includes
         for line in lines:
             inc_match = re.match(r'^\s*#include\s+[<"]([^>"]+)[>"]', line)
             if inc_match:
                 result.imports.append(inc_match.group(1))
 
-        # Classes & Structs
         for idx, line in enumerate(lines, start=1):
             cls_match = re.search(r'\b(class|struct)\s+([A-Za-z_][A-Za-z0-9_]*)', line)
             if cls_match and not line.strip().startswith("//"):
                 result.classes.append({"name": cls_match.group(2), "line": idx})
 
-        # Functions
         func_regex = re.compile(
-            r'^(?:[a-zA-Z_][a-zA-Z0-9_]*\s+)+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(([^)]*)\)\s*\{'
+            r'^(?:[a-zA-Z_][a-zA-Z0-9_]*\s+)+([a-zA-Z_][a-zA-Z0-9_]*)\s*\([^)]*\)\s*\{'
         )
         for idx, line in enumerate(lines, start=1):
             if line.strip().startswith("//") or line.strip().startswith("#"):
@@ -201,7 +249,7 @@ class CPPAnalyzer:
     def _check_unsafe_functions(self, lines: list, result: StaticAnalysisResult):
         for idx, line in enumerate(lines, start=1):
             stripped = line.strip()
-            if stripped.startswith("//"):
+            if stripped.startswith("//") or _is_suppressed(line):
                 continue
 
             for func, (sev, msg, sug) in self.UNSAFE_FUNCTIONS.items():
@@ -217,20 +265,18 @@ class CPPAnalyzer:
     def _check_dangerous_patterns(self, lines: list, result: StaticAnalysisResult):
         for idx, line in enumerate(lines, start=1):
             stripped = line.strip()
-            if stripped.startswith("//"):
+            if stripped.startswith("//") or _is_suppressed(line):
                 continue
 
-            # Format String Vulnerability (örn: printf(str);)
             if re.search(r'\bprintf\s*\(\s*[a-zA-Z_][a-zA-Z0-9_]*\s*\)\s*;', stripped):
                 result.findings.append(Finding(
                     severity="HIGH",
                     category="Security",
                     line=idx,
                     message="Format String Açığı: 'printf' doğrudan değişkene paslanmış.",
-                    suggestion="Format belirteci kullanın: printf(\"%s\", var);"
+                    suggestion='Format belirteci kullanın: printf("%s", var);'
                 ))
 
-            # Malloc without NULL check or Memory Leak risk
             if re.search(r'\b(malloc|calloc|realloc)\s*\(', stripped):
                 result.findings.append(Finding(
                     severity="MEDIUM",
@@ -240,7 +286,6 @@ class CPPAnalyzer:
                     suggestion="C++ yazıyorsanız RAII ve std::unique_ptr / std::make_unique tercih edin."
                 ))
 
-            # Raw new operator in C++
             if re.search(r'\bnew\s+[a-zA-Z_][a-zA-Z0-9_]*\b', stripped) and "delete" not in stripped:
                 result.findings.append(Finding(
                     severity="LOW",
@@ -253,19 +298,22 @@ class CPPAnalyzer:
     def _check_secrets(self, lines: list, result: StaticAnalysisResult):
         for idx, line in enumerate(lines, start=1):
             stripped = line.strip()
-            if stripped.startswith("//"):
+            if stripped.startswith("//") or _is_suppressed(line):
                 continue
             for kw in SECRET_KEYWORDS:
                 pattern = re.compile(rf'{kw}\s*=\s*["\']([^"\']+)["\']', re.IGNORECASE)
                 match = pattern.search(stripped)
-                if match and SECRET_VALUE_PATTERN.match(match.group(1)):
-                    result.findings.append(Finding(
-                        severity="HIGH",
-                        category="Security",
-                        line=idx,
-                        message=f"Hard-coded C/C++ '{kw}' değeri tespit edildi.",
-                        suggestion="Hassas değerleri ortam değişkenlerinden veya güvenli bir yapılandırma dosyasından okuyun."
-                    ))
+                if match:
+                    value = match.group(1)
+                    if SECRET_VALUE_PATTERN.match(value) and value.lower() not in PLACEHOLDER_VALUES:
+                        result.findings.append(Finding(
+                            severity="HIGH",
+                            category="Security",
+                            line=idx,
+                            message=f"Hard-coded C/C++ '{kw}' değeri tespit edildi.",
+                            suggestion="Hassas değerleri ortam değişkenlerinden veya güvenli bir yapılandırma dosyasından okuyun.",
+                            confidence=0.8,
+                        ))
 
 
 
@@ -298,6 +346,7 @@ class JavaAnalyzer:
         self._check_secrets(lines, result)
         self._check_sensitive_logging(lines, result)
 
+        result.findings = _postprocess_findings(result.findings, source_code.splitlines())
         return result
 
     def _extract_java_structures(self, lines: list, result: StaticAnalysisResult):
@@ -330,7 +379,7 @@ class JavaAnalyzer:
     def _check_unsafe_calls(self, lines: list, result: StaticAnalysisResult):
         for idx, line in enumerate(lines, start=1):
             stripped = line.strip()
-            if stripped.startswith("//"):
+            if stripped.startswith("//") or _is_suppressed(line):
                 continue
             for pattern, (sev, msg, sug) in self.UNSAFE_CALLS.items():
                 if pattern in stripped:
@@ -343,7 +392,7 @@ class JavaAnalyzer:
         concat_pattern = re.compile(r'["\']\s*\+\s*\w|\w\s*\+\s*["\']')
         for idx, line in enumerate(lines, start=1):
             stripped = line.strip()
-            if stripped.startswith("//"):
+            if stripped.startswith("//") or _is_suppressed(line):
                 continue
             if sql_keywords.search(stripped) and concat_pattern.search(stripped):
                 result.findings.append(Finding(
@@ -352,6 +401,7 @@ class JavaAnalyzer:
                     line=idx,
                     message="SQL Injection riski: SQL sorgusu string birleştirme ile oluşturuluyor.",
                     suggestion="PreparedStatement veya JPA parametrik sorgu kullanın.",
+                    confidence=0.85,
                 ))
 
     def _check_empty_catch(self, lines: list, result: StaticAnalysisResult):
@@ -361,7 +411,7 @@ class JavaAnalyzer:
 
         for idx, line in enumerate(lines, start=1):
             stripped = line.strip()
-            if stripped.startswith("//"):
+            if stripped.startswith("//") or _is_suppressed(line):
                 continue
 
             if re.search(r'\bcatch\s*\(', stripped):
@@ -384,10 +434,9 @@ class JavaAnalyzer:
                     in_catch = False
 
     def _check_string_equality(self, lines: list, result: StaticAnalysisResult):
-        pattern = re.compile(r'(?:String|string)\s+\w+\s*=.*\n?.*==\s*"|\bif\s*\(\s*\w+\s*==\s*"')
         for idx, line in enumerate(lines, start=1):
             stripped = line.strip()
-            if stripped.startswith("//"):
+            if stripped.startswith("//") or _is_suppressed(line):
                 continue
             if re.search(r'==\s*"[^"]*"', stripped) or re.search(r'"[^"]*"\s*==', stripped):
                 result.findings.append(Finding(
@@ -401,26 +450,29 @@ class JavaAnalyzer:
     def _check_secrets(self, lines: list, result: StaticAnalysisResult):
         for idx, line in enumerate(lines, start=1):
             stripped = line.strip()
-            if stripped.startswith("//"):
+            if stripped.startswith("//") or _is_suppressed(line):
                 continue
             for kw in self.SECRET_KEYWORDS_JAVA:
                 pattern = re.compile(rf'\b{kw}\b\s*=\s*["\']([^"\']+)["\']', re.IGNORECASE)
                 match = pattern.search(stripped)
-                if match and SECRET_VALUE_PATTERN.match(match.group(1)):
-                    result.findings.append(Finding(
-                        severity="HIGH",
-                        category="Security",
-                        line=idx,
-                        message=f"Hard-coded '{kw}' değeri tespit edildi.",
-                        suggestion="Hassas değerleri environment variable veya güvenli bir secret manager ile okuyun.",
-                    ))
+                if match:
+                    value = match.group(1)
+                    if SECRET_VALUE_PATTERN.match(value) and value.lower() not in PLACEHOLDER_VALUES:
+                        result.findings.append(Finding(
+                            severity="HIGH",
+                            category="Security",
+                            line=idx,
+                            message=f"Hard-coded '{kw}' değeri tespit edildi.",
+                            suggestion="Hassas değerleri environment variable veya güvenli bir secret manager ile okuyun.",
+                            confidence=0.8,
+                        ))
 
     def _check_sensitive_logging(self, lines: list, result: StaticAnalysisResult):
-        log_pattern   = re.compile(r'\b(System\.out\.print|println|logger\.(info|debug|warn|error))\b', re.IGNORECASE)
+        log_pattern    = re.compile(r'\b(System\.out\.print|println|logger\.(info|debug|warn|error))\b', re.IGNORECASE)
         secret_pattern = re.compile(r'\b(password|passwd|secret|token|apikey)\b', re.IGNORECASE)
         for idx, line in enumerate(lines, start=1):
             stripped = line.strip()
-            if stripped.startswith("//"):
+            if stripped.startswith("//") or _is_suppressed(line):
                 continue
             if log_pattern.search(stripped) and secret_pattern.search(stripped):
                 result.findings.append(Finding(
@@ -429,6 +481,7 @@ class JavaAnalyzer:
                     line=idx,
                     message="Log satırında hassas veri (şifre/token) yazdırılıyor olabilir.",
                     suggestion="Hassas alanları loglara yazmaktan kaçının veya maskeleme uygulayın.",
+                    confidence=0.75,
                 ))
 
 
@@ -582,14 +635,16 @@ class _CodeVisitor(ast.NodeVisitor):
                 if keyword in var_lower:
                     if isinstance(node.value, ast.Constant) and isinstance(node.value.value, str):
                         val = node.value.value
-                        if val and SECRET_VALUE_PATTERN.match(val):
+                        if val and SECRET_VALUE_PATTERN.match(val) and val.lower() not in PLACEHOLDER_VALUES:
                             self.findings.append(Finding(
                                 severity="HIGH",
                                 category="Security",
                                 line=node.lineno,
                                 message=f"Hard-coded '{keyword}' değeri tespit edildi: '{target.id}'.",
                                 suggestion="Hassas değerleri .env dosyasına veya environment variable'a taşıyın.",
+                                confidence=0.8,
                             ))
+
 
     def _get_call_name(self, node: ast.Call) -> Optional[str]:
         if isinstance(node.func, ast.Name):
