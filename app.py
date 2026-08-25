@@ -80,7 +80,7 @@ with st.sidebar:
     if source_type == "Örnek Dosyalar":
         examples_dir = "examples"
         available_files = []
-        valid_exts = (".py", ".c", ".cpp", ".cc", ".cxx", ".h", ".hpp")
+        valid_exts = (".py", ".c", ".cpp", ".cc", ".cxx", ".h", ".hpp", ".java")
         if os.path.exists(examples_dir):
             available_files = [f for f in os.listdir(examples_dir) if f.endswith(valid_exts)]
 
@@ -93,7 +93,7 @@ with st.sidebar:
                 file_display_name = selected_example
 
     elif source_type == "Dosya Yükle":
-        uploaded_file = st.file_uploader("Kod Dosyası Yükleyin (.py, .c, .cpp, .h)", type=["py", "c", "cpp", "cc", "h", "hpp"])
+        uploaded_file = st.file_uploader("Kod Dosyası Yükleyin (.py, .c, .cpp, .h, .java)", type=["py", "c", "cpp", "cc", "h", "hpp", "java"])
         if uploaded_file is not None:
             code_content = uploaded_file.getvalue().decode("utf-8", errors="replace")
             file_display_name = uploaded_file.name
@@ -193,7 +193,12 @@ if analyze_button or "last_result" in st.session_state:
     ])
 
     with tab_static:
-        lang_title = "C/C++ Statik Analiz" if static_res.language == "cpp" else "Python AST Statik Analiz"
+        if static_res.language == "java":
+            lang_title = "Java Statik Analiz"
+        elif static_res.language == "cpp":
+            lang_title = "C/C++ Statik Analiz"
+        else:
+            lang_title = "Python AST Statik Analiz"
         st.markdown(f"#### 🔍 {lang_title} Bulguları")
         if static_res.syntax_error:
             st.error(f"⚠️ Syntax Hatası: {static_res.syntax_error}")

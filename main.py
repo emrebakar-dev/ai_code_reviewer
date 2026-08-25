@@ -34,7 +34,7 @@ def parse_args():
     return parser.parse_args()
 
 
-SUPPORTED_EXTENSIONS = (".py", ".c", ".cpp", ".cc", ".cxx", ".h", ".hpp")
+SUPPORTED_EXTENSIONS = (".py", ".c", ".cpp", ".cc", ".cxx", ".h", ".hpp", ".java")
 
 
 def validate_file(filepath: str) -> bool:

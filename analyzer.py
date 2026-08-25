@@ -55,7 +55,7 @@ class StaticAnalysisResult:
 
 
 class StaticAnalyzer:
-    """Uzantıya göre Python veya C/C++ analizörünü çalıştıran ana fabrika sınıfı."""
+    """Uzantıya göre Python, C/C++ veya Java analizörünü çalıştıran ana fabrika sınıfı."""
 
     def analyze(self, filepath: str) -> StaticAnalysisResult:
         source_code = self._read_file(filepath)
@@ -63,6 +63,8 @@ class StaticAnalyzer:
 
         if ext in ("c", "cpp", "cc", "cxx", "h", "hpp"):
             return CPPAnalyzer().analyze(filepath, source_code)
+        elif ext == "java":
+            return JavaAnalyzer().analyze(filepath, source_code)
         else:
             return PythonAnalyzer().analyze(filepath, source_code)
 
@@ -264,6 +266,170 @@ class CPPAnalyzer:
                         message=f"Hard-coded C/C++ '{kw}' değeri tespit edildi.",
                         suggestion="Hassas değerleri ortam değişkenlerinden veya güvenli bir yapılandırma dosyasından okuyun."
                     ))
+
+
+
+class JavaAnalyzer:
+    """Java için statik kod analizörü (Regex ve desen taraması)."""
+
+    UNSAFE_CALLS = {
+        "Runtime.exec":          ("HIGH",   "Kabuk Enjeksiyonu Riski: 'Runtime.exec()' harici komut çalıştırır.", "ProcessBuilder ile komut dizisini liste olarak geçirin."),
+        "ProcessBuilder":        ("MEDIUM", "ProcessBuilder kullanımı: komut argümanlarının doğrulanması gerekir.", "Kullanıcı girdisini doğrudan komuta eklemeyin."),
+        "ObjectInputStream":     ("HIGH",   "Güvensiz Deserialization: 'ObjectInputStream.readObject()' uzaktan kod yürütümüne neden olabilir.", "Güvenilmeyen kaynaklardan deserialization yapmaktan kaçının."),
+        "printStackTrace":       ("LOW",    "'printStackTrace()' iç uygulama detaylarını açığa çıkarır.", "Yapılandırılmış bir logger (SLF4J/Log4j) kullanın."),
+    }
+
+    SECRET_KEYWORDS_JAVA = [
+        "password", "passwd", "secret", "apikey", "api_key",
+        "token", "auth_token", "private_key", "client_secret",
+    ]
+
+    def analyze(self, filepath: str, source_code: str) -> StaticAnalysisResult:
+        result = StaticAnalysisResult(filepath=filepath, source_code=source_code, language="java")
+        clean_code = re.sub(r'/\*.*?\*/', lambda m: '\n' * m.group(0).count('\n'), source_code, flags=re.DOTALL)
+        lines = clean_code.splitlines()
+        result.total_lines = len(source_code.splitlines())
+
+        self._extract_java_structures(lines, result)
+        self._check_unsafe_calls(lines, result)
+        self._check_sql_injection(lines, result)
+        self._check_empty_catch(lines, result)
+        self._check_string_equality(lines, result)
+        self._check_secrets(lines, result)
+        self._check_sensitive_logging(lines, result)
+
+        return result
+
+    def _extract_java_structures(self, lines: list, result: StaticAnalysisResult):
+        import_re = re.compile(r'^\s*import\s+([\w.]+)\s*;')
+        class_re  = re.compile(r'\b(class|interface|enum)\s+([A-Za-z_][A-Za-z0-9_]*)')
+        func_re   = re.compile(
+            r'(?:public|private|protected|static|final|synchronized|\s)+'
+            r'[\w<>\[\]]+\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\([^)]*\)\s*(?:throws\s+[\w,\s]+)?\s*\{'
+        )
+
+        for idx, line in enumerate(lines, start=1):
+            stripped = line.strip()
+            if stripped.startswith("//"):
+                continue
+
+            m = import_re.match(line)
+            if m:
+                result.imports.append(m.group(1))
+
+            m = class_re.search(line)
+            if m:
+                result.classes.append({"name": m.group(2), "line": idx})
+
+            m = func_re.search(line)
+            if m:
+                name = m.group(1)
+                if name not in ("if", "while", "for", "switch", "catch", "try"):
+                    result.functions.append({"name": name, "line": idx, "param_count": 0, "length": 0})
+
+    def _check_unsafe_calls(self, lines: list, result: StaticAnalysisResult):
+        for idx, line in enumerate(lines, start=1):
+            stripped = line.strip()
+            if stripped.startswith("//"):
+                continue
+            for pattern, (sev, msg, sug) in self.UNSAFE_CALLS.items():
+                if pattern in stripped:
+                    result.findings.append(Finding(
+                        severity=sev, category="Security", line=idx, message=msg, suggestion=sug
+                    ))
+
+    def _check_sql_injection(self, lines: list, result: StaticAnalysisResult):
+        sql_keywords = re.compile(r'\b(SELECT|INSERT|UPDATE|DELETE|FROM|WHERE)\b', re.IGNORECASE)
+        concat_pattern = re.compile(r'["\']\s*\+\s*\w|\w\s*\+\s*["\']')
+        for idx, line in enumerate(lines, start=1):
+            stripped = line.strip()
+            if stripped.startswith("//"):
+                continue
+            if sql_keywords.search(stripped) and concat_pattern.search(stripped):
+                result.findings.append(Finding(
+                    severity="HIGH",
+                    category="Security",
+                    line=idx,
+                    message="SQL Injection riski: SQL sorgusu string birleştirme ile oluşturuluyor.",
+                    suggestion="PreparedStatement veya JPA parametrik sorgu kullanın.",
+                ))
+
+    def _check_empty_catch(self, lines: list, result: StaticAnalysisResult):
+        in_catch = False
+        catch_line = 0
+        brace_depth = 0
+
+        for idx, line in enumerate(lines, start=1):
+            stripped = line.strip()
+            if stripped.startswith("//"):
+                continue
+
+            if re.search(r'\bcatch\s*\(', stripped):
+                in_catch = True
+                catch_line = idx
+                brace_depth = 0
+
+            if in_catch:
+                brace_depth += stripped.count("{") - stripped.count("}")
+                if brace_depth < 0 or (brace_depth == 0 and "{" in stripped and "}" in stripped):
+                    body = stripped[stripped.find("{") + 1: stripped.rfind("}") if "}" in stripped else len(stripped)].strip()
+                    if not body or body in ("//", ""):
+                        result.findings.append(Finding(
+                            severity="MEDIUM",
+                            category="Code Quality",
+                            line=catch_line,
+                            message="Boş 'catch' bloğu: hata sessizce yutulur.",
+                            suggestion="En azından loglama yapın: logger.error(e.getMessage(), e);",
+                        ))
+                    in_catch = False
+
+    def _check_string_equality(self, lines: list, result: StaticAnalysisResult):
+        pattern = re.compile(r'(?:String|string)\s+\w+\s*=.*\n?.*==\s*"|\bif\s*\(\s*\w+\s*==\s*"')
+        for idx, line in enumerate(lines, start=1):
+            stripped = line.strip()
+            if stripped.startswith("//"):
+                continue
+            if re.search(r'==\s*"[^"]*"', stripped) or re.search(r'"[^"]*"\s*==', stripped):
+                result.findings.append(Finding(
+                    severity="MEDIUM",
+                    category="Potential Bugs",
+                    line=idx,
+                    message="String karşılaştırmasında '==' kullanımı referans karşılaştırması yapar.",
+                    suggestion="String karşılaştırması için '.equals()' metodunu kullanın.",
+                ))
+
+    def _check_secrets(self, lines: list, result: StaticAnalysisResult):
+        for idx, line in enumerate(lines, start=1):
+            stripped = line.strip()
+            if stripped.startswith("//"):
+                continue
+            for kw in self.SECRET_KEYWORDS_JAVA:
+                pattern = re.compile(rf'\b{kw}\b\s*=\s*["\']([^"\']+)["\']', re.IGNORECASE)
+                match = pattern.search(stripped)
+                if match and SECRET_VALUE_PATTERN.match(match.group(1)):
+                    result.findings.append(Finding(
+                        severity="HIGH",
+                        category="Security",
+                        line=idx,
+                        message=f"Hard-coded '{kw}' değeri tespit edildi.",
+                        suggestion="Hassas değerleri environment variable veya güvenli bir secret manager ile okuyun.",
+                    ))
+
+    def _check_sensitive_logging(self, lines: list, result: StaticAnalysisResult):
+        log_pattern   = re.compile(r'\b(System\.out\.print|println|logger\.(info|debug|warn|error))\b', re.IGNORECASE)
+        secret_pattern = re.compile(r'\b(password|passwd|secret|token|apikey)\b', re.IGNORECASE)
+        for idx, line in enumerate(lines, start=1):
+            stripped = line.strip()
+            if stripped.startswith("//"):
+                continue
+            if log_pattern.search(stripped) and secret_pattern.search(stripped):
+                result.findings.append(Finding(
+                    severity="MEDIUM",
+                    category="Security",
+                    line=idx,
+                    message="Log satırında hassas veri (şifre/token) yazdırılıyor olabilir.",
+                    suggestion="Hassas alanları loglara yazmaktan kaçının veya maskeleme uygulayın.",
+                ))
 
 
 class _CodeVisitor(ast.NodeVisitor):

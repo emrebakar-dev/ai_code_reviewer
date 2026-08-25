@@ -41,15 +41,23 @@ class AIReviewResult:
     parse_failed: bool = False  # True: model cevap verdi ama JSON parse edilemedi
 
 
-SYSTEM_PROMPT = """You are a senior multi-language software auditor and code reviewer. Your task is to analyze the provided source code (Python, C, C++, etc.) and identify issues.
+SYSTEM_PROMPT = """You are a senior multi-language software auditor and code reviewer. Your task is to analyze the provided source code (Python, C, C++, Java, etc.) and identify issues.
 
 Review the code in these categories:
 - Potential Bugs
-- Security (Memory safety, Buffer Overflow, Injection, Hard-coded secrets)
+- Security (Memory safety, Buffer Overflow, SQL Injection, Injection, Hard-coded secrets, Insecure Deserialization, Sensitive data exposure)
 - Performance
 - Code Quality
 - Readability
 - Maintainability
+
+For Java specifically, also consider:
+- SQL Injection via string concatenation (use PreparedStatement)
+- Insecure deserialization (ObjectInputStream)
+- Sensitive data in logs (System.out.println with passwords/tokens)
+- Empty catch blocks that silently swallow exceptions
+- String comparison with == instead of .equals()
+- Raw types without generics
 
 IMPORTANT RULES:
 1. Only report issues you can directly observe in the code. Do NOT speculate about runtime behavior you cannot confirm.
