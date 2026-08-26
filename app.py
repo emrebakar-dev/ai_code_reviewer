@@ -260,40 +260,71 @@ with st.sidebar:
 # ─── PROJECT / ZIP MODE ───────────────────────────────────────────────────────
 if source_type == "Proje / Klasör (ZIP)":
     st.markdown("### 📦 Proje / Klasör Taraması")
-    st.info("Projenizi bir `.zip` dosyası olarak sıkıştırın ve yükleyin. Tüm desteklenen dosyalar (`.py`, `.c`, `.cpp`, `.java`, ...) otomatik taranır.")
 
-    zip_file = st.file_uploader("Proje ZIP Dosyası Yükle", type=["zip"])
+    proj_input_type = st.radio(
+        "Klasör Girdi Yöntemi:",
+        ["Yerel Klasör Yolu Gir", "ZIP Dosyası Yükle"],
+        horizontal=True
+    )
 
-    if analyze_button and zip_file:
-        tmp_dir = tempfile.mkdtemp(prefix="aicr_project_")
-        try:
+    zip_file = None
+    dir_path_input = ""
+
+    if proj_input_type == "ZIP Dosyası Yükle":
+        st.info("Projenizi bir `.zip` dosyası olarak yükleyin. Desteklenen tüm dosyalar otomatik taranır.")
+        zip_file = st.file_uploader("Proje ZIP Dosyası Yükle", type=["zip"])
+    else:
+        st.info("Bilgisayarınızdaki klasör yolunu girin. Arka planda tüm proje otomatik taranır.")
+        dir_path_input = st.text_input(
+            "Yerel Klasör Yolu:",
+            value=os.path.abspath("examples"),
+            placeholder="/Users/kullanici/Desktop/projem"
+        )
+
+    if analyze_button:
+        target_dir = None
+        tmp_dir = None
+
+        if proj_input_type == "ZIP Dosyası Yükle" and zip_file:
+            tmp_dir = tempfile.mkdtemp(prefix="aicr_project_")
             with zipfile.ZipFile(zip_file, "r") as zf:
                 zf.extractall(tmp_dir)
+            target_dir = tmp_dir
+            proj_name = zip_file.name
+        elif proj_input_type == "Yerel Klasör Yolu Gir" and dir_path_input.strip():
+            if os.path.isdir(dir_path_input.strip()):
+                target_dir = dir_path_input.strip()
+                proj_name = os.path.basename(target_dir) or target_dir
+            else:
+                st.error(f"❌ Klasör bulunamadı: '{dir_path_input}'")
 
-            from scanner import ProjectScanner
+        if target_dir:
+            try:
+                from scanner import ProjectScanner
 
-            progress_bar = st.progress(0, text="Dosyalar taranıyor...")
-            status_text = st.empty()
+                progress_bar = st.progress(0, text="Dosyalar taranıyor...")
+                status_text = st.empty()
 
-            def ui_progress(i, total, filepath):
-                pct = int((i + 1) / total * 100)
-                rel = os.path.relpath(filepath, tmp_dir)
-                progress_bar.progress(pct, text=f"[{i+1}/{total}] {rel}")
-                status_text.caption(f"Taranan: {rel}")
+                def ui_progress(i, total, filepath):
+                    pct = int((i + 1) / total * 100)
+                    rel = os.path.relpath(filepath, target_dir)
+                    progress_bar.progress(pct, text=f"[{i+1}/{total}] {rel}")
+                    status_text.caption(f"Taranan: {rel}")
 
-            scanner = ProjectScanner(no_ai=not enable_ai, model=selected_model if selected_model else None)
-            project_result = scanner.scan(tmp_dir, progress_callback=ui_progress)
-            project_result.directory = zip_file.name
+                scanner = ProjectScanner(no_ai=not enable_ai, model=selected_model if selected_model else None)
+                project_result = scanner.scan(target_dir, progress_callback=ui_progress)
+                project_result.directory = proj_name
 
-            progress_bar.progress(100, text="Tarama tamamlandı!")
-            status_text.empty()
+                progress_bar.progress(100, text="Tarama tamamlandı!")
+                status_text.empty()
 
-            report_path = ProjectReporter(project_result).save_report()
-            st.session_state["project_result"] = project_result
-            st.session_state["project_report_path"] = report_path
+                report_path = ProjectReporter(project_result).save_report()
+                st.session_state["project_result"] = project_result
+                st.session_state["project_report_path"] = report_path
+            finally:
+                if tmp_dir:
+                    shutil.rmtree(tmp_dir, ignore_errors=True)
 
-        finally:
-            shutil.rmtree(tmp_dir, ignore_errors=True)
 
     if "project_result" in st.session_state:
         pr = st.session_state["project_result"]
