@@ -24,54 +24,146 @@ st.set_page_config(
 
 st.markdown("""
 <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;600;700&display=swap');
+
+    html, body, [class*="css"] {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
     .main-header {
-        font-size: 2.2rem;
-        font-weight: 700;
-        margin-bottom: 0.2rem;
-        color: #4FC3F7;
+        font-size: 2.4rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, #00E5FF 0%, #7C4DFF 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 0.1rem;
+        letter-spacing: -0.5px;
     }
     .sub-header {
-        font-size: 1rem;
-        color: #B0BEC5;
-        margin-bottom: 1.5rem;
+        font-size: 1.05rem;
+        color: #90A4AE;
+        margin-bottom: 1.8rem;
+        font-weight: 400;
     }
+
+    /* Glassmorphism Cards */
     .card-high {
-        background-color: #2C1B1D;
+        background: rgba(255, 82, 82, 0.08);
+        border: 1px solid rgba(255, 82, 82, 0.3);
         border-left: 5px solid #FF5252;
         color: #FFFFFF;
-        padding: 1rem;
-        border-radius: 8px;
-        margin-bottom: 0.9rem;
+        padding: 1.1rem 1.3rem;
+        border-radius: 10px;
+        margin-bottom: 1rem;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 4px 15px rgba(255, 82, 82, 0.05);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
+    .card-high:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(255, 82, 82, 0.15);
+    }
+
     .card-medium {
-        background-color: #2E2519;
+        background: rgba(255, 183, 77, 0.08);
+        border: 1px solid rgba(255, 183, 77, 0.3);
         border-left: 5px solid #FFB74D;
         color: #FFFFFF;
-        padding: 1rem;
-        border-radius: 8px;
-        margin-bottom: 0.9rem;
+        padding: 1.1rem 1.3rem;
+        border-radius: 10px;
+        margin-bottom: 1rem;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 4px 15px rgba(255, 183, 77, 0.05);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
+    .card-medium:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(255, 183, 77, 0.15);
+    }
+
     .card-low {
-        background-color: #1B2B1E;
+        background: rgba(102, 187, 106, 0.08);
+        border: 1px solid rgba(102, 187, 106, 0.3);
         border-left: 5px solid #66BB6A;
         color: #FFFFFF;
-        padding: 1rem;
-        border-radius: 8px;
-        margin-bottom: 0.9rem;
+        padding: 1.1rem 1.3rem;
+        border-radius: 10px;
+        margin-bottom: 1rem;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 4px 15px rgba(102, 187, 106, 0.05);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
-    .badge-high { color: #FF5252; font-weight: bold; font-size: 1.05rem; }
-    .badge-medium { color: #FFB74D; font-weight: bold; font-size: 1.05rem; }
-    .badge-low { color: #66BB6A; font-weight: bold; font-size: 1.05rem; }
-    .card-title { color: #FFFFFF; font-size: 1.1rem; font-weight: 600; }
-    .card-body-text { color: #F5F5F5; font-size: 1.02rem; margin-top: 6px; line-height: 1.4; display: block; }
-    .suggestion-text { color: #FFECB3; font-style: italic; font-size: 0.95rem; margin-top: 6px; display: block; }
-    .file-row-high { border-left: 4px solid #FF5252; padding: 4px 10px; margin-bottom: 4px; background: #1a0c0e; border-radius: 4px; }
-    .file-row-ok { border-left: 4px solid #66BB6A; padding: 4px 10px; margin-bottom: 4px; background: #0e1a10; border-radius: 4px; }
+    .card-low:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 187, 106, 0.15);
+    }
+
+    .badge-high {
+        background: #FF5252;
+        color: #FFFFFF;
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-weight: 700;
+        font-size: 0.8rem;
+        letter-spacing: 0.5px;
+    }
+    .badge-medium {
+        background: #FFB74D;
+        color: #121212;
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-weight: 700;
+        font-size: 0.8rem;
+        letter-spacing: 0.5px;
+    }
+    .badge-low {
+        background: #66BB6A;
+        color: #121212;
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-weight: 700;
+        font-size: 0.8rem;
+        letter-spacing: 0.5px;
+    }
+
+    .card-title {
+        color: #FFFFFF;
+        font-size: 1.15rem;
+        font-weight: 600;
+        margin-left: 8px;
+    }
+    .card-body-text {
+        color: #E0E0E0;
+        font-size: 1rem;
+        margin-top: 8px;
+        line-height: 1.5;
+        display: block;
+    }
+    .suggestion-text {
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px dashed rgba(255, 255, 255, 0.15);
+        padding: 8px 12px;
+        border-radius: 6px;
+        color: #80DEEA;
+        font-size: 0.93rem;
+        margin-top: 10px;
+        display: block;
+        font-family: 'Fira Code', monospace;
+    }
+    .welcome-card {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        padding: 2rem;
+        text-align: center;
+        margin-top: 2rem;
+    }
 </style>
 """, unsafe_allow_html=True)
 
 st.markdown('<div class="main-header">⚡ AI Code Review Assistant</div>', unsafe_allow_html=True)
-st.markdown('<div class="sub-header">Yapay Zekâ ve Statik Analiz Destekli Kod İnceleme Sistemi</div>', unsafe_allow_html=True)
+st.markdown('<div class="sub-header">Statik Analiz + Yapay Zekâ Destekli Çok Dilli Kod Güvenliği ve İnceleme Platformu</div>', unsafe_allow_html=True)
+
 
 
 def render_finding_card(f, confidence_threshold):
@@ -406,4 +498,34 @@ else:
                 )
                 st.text_area("Rapor Önizleme:", value=report_txt, height=400)
     else:
-        st.info("👈 Analizi başlatmak için yan menüden bir dosya seçin/yükleyin ve **🔍 Analiz Et** butonuna tıklayın.")
+        st.markdown("""
+        <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; padding: 2.5rem; text-align: center; margin-top: 1rem;">
+            <h2 style="color: #00E5FF; font-weight: 700; margin-bottom: 0.5rem;">🚀 Hoş Geldiniz!</h2>
+            <p style="color: #B0BEC5; font-size: 1.05rem; max-width: 600px; margin: 0 auto 1.5rem auto;">
+                Analiz yapmak için sol menüden <b>Tek Dosya</b> yükleyin veya projenizi <b>ZIP</b> olarak yükleyip <b>🔍 Analiz Et</b> butonuna tıklayın.
+            </p>
+            <div style="display: flex; justify-content: center; gap: 1.5rem; flex-wrap: wrap; margin-top: 1.5rem;">
+                <div style="background: rgba(0, 229, 255, 0.05); border: 1px solid rgba(0, 229, 255, 0.2); padding: 1rem 1.5rem; border-radius: 10px; width: 180px;">
+                    <div style="font-size: 1.5rem;">🐍</div>
+                    <div style="font-weight: 600; color: #FFF; margin-top: 4px;">Python</div>
+                    <div style="font-size: 0.8rem; color: #78909C;">AST & Güvenlik</div>
+                </div>
+                <div style="background: rgba(124, 77, 255, 0.05); border: 1px solid rgba(124, 77, 255, 0.2); padding: 1rem 1.5rem; border-radius: 10px; width: 180px;">
+                    <div style="font-size: 1.5rem;">⚡</div>
+                    <div style="font-weight: 600; color: #FFF; margin-top: 4px;">C / C++</div>
+                    <div style="font-size: 0.8rem; color: #78909C;">Bellek & Buffer</div>
+                </div>
+                <div style="background: rgba(255, 183, 77, 0.05); border: 1px solid rgba(255, 183, 77, 0.2); padding: 1rem 1.5rem; border-radius: 10px; width: 180px;">
+                    <div style="font-size: 1.5rem;">☕</div>
+                    <div style="font-weight: 600; color: #FFF; margin-top: 4px;">Java</div>
+                    <div style="font-size: 0.8rem; color: #78909C;">SQLi & Inj.</div>
+                </div>
+                <div style="background: rgba(102, 187, 106, 0.05); border: 1px solid rgba(102, 187, 106, 0.2); padding: 1rem 1.5rem; border-radius: 10px; width: 180px;">
+                    <div style="font-size: 1.5rem;">🤖</div>
+                    <div style="font-weight: 600; color: #FFF; margin-top: 4px;">Qwen 27B AI</div>
+                    <div style="font-size: 0.8rem; color: #78909C;">Derin Analiz</div>
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
