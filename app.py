@@ -152,7 +152,7 @@ with st.sidebar:
         min_value=0.0, max_value=1.0, value=0.0, step=0.05,
         help="Bu eşiğin altındaki bulgular gizlenir (0 = hepsi göster)"
     )
-    selected_model = st.text_input("AI Model:", value=os.getenv("OPENAI_MODEL", "groq/compound-mini"))
+    selected_model = st.text_input("AI Model:", value=os.getenv("OPENAI_MODEL", "groq/llama-3.1-8b-instant"))
     api_key = os.getenv("OPENAI_API_KEY", "")
 
     if enable_ai:
