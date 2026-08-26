@@ -328,9 +328,10 @@ if source_type == "Proje / Klasör (ZIP)":
         st.info("Bilgisayarınızdaki klasör yolunu girin. Arka planda tüm proje otomatik taranır.")
         dir_path_input = st.text_input(
             "Yerel Klasör Yolu:",
-            value=os.path.abspath("examples"),
-            placeholder="/Users/kullanici/Desktop/projem"
+            value="",
+            placeholder="./examples veya /Users/kullanici/Desktop/proje"
         )
+
 
     if analyze_button:
         target_dir = None
@@ -441,8 +442,9 @@ if source_type == "Proje / Klasör (ZIP)":
                 mime="text/plain",
                 type="primary"
             )
-    elif not zip_file:
-        st.caption("👆 Başlamak için bir ZIP dosyası yükleyin.")
+    elif not zip_file and not dir_path_input:
+        st.caption("👆 Başlamak için yukarıdaki kutuya bir klasör yolu girin veya ZIP dosyası yükleyin.")
+
 
 # ─── SINGLE FILE MODE ─────────────────────────────────────────────────────────
 else:
