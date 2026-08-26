@@ -229,7 +229,7 @@ class CPPAnalyzer:
                 result.classes.append({"name": cls_match.group(2), "line": idx})
 
         func_regex = re.compile(
-            r'^(?:[a-zA-Z_][a-zA-Z0-9_]*\s+)+([a-zA-Z_][a-zA-Z0-9_]*)\s*\([^)]*\)\s*\{'
+            r'^(?:[a-zA-Z_][a-zA-Z0-9_]*\s+)+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(([^)]*)\)\s*\{'
         )
         for idx, line in enumerate(lines, start=1):
             if line.strip().startswith("//") or line.strip().startswith("#"):
@@ -245,6 +245,7 @@ class CPPAnalyzer:
                         "param_count": len(params),
                         "length": 0
                     })
+
 
     def _check_unsafe_functions(self, lines: list, result: StaticAnalysisResult):
         for idx, line in enumerate(lines, start=1):

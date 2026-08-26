@@ -1,6 +1,6 @@
 import os
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 
 from analyzer import StaticAnalysisResult, Finding
 from llm_reviewer import AIReviewResult, AIFinding
@@ -259,3 +259,86 @@ class Reporter:
         if suggestion:
             result.append(f"    >> {suggestion}")
         return result
+
+
+class ProjectReporter:
+    def __init__(self, project_result):
+        self.project = project_result
+        self.timestamp = datetime.now()
+
+    def save_report(self) -> str:
+        os.makedirs(REPORTS_DIR, exist_ok=True)
+        report_path = os.path.join(
+            REPORTS_DIR,
+            f"project_review_{self.timestamp.strftime('%Y_%m_%d_%H%M')}.txt"
+        )
+        with open(report_path, "w", encoding="utf-8") as f:
+            f.write("\n".join(self._build_lines()))
+        return report_path
+
+    def _build_lines(self) -> list:
+        w   = 72
+        hr  = "=" * w
+        thin = "-" * w
+        lines = [
+            hr,
+            "AI CODE REVIEW — PROJE RAPORU".center(w),
+            hr,
+            f"Klasor         : {self.project.directory}",
+            f"Analiz tarihi  : {self.timestamp.strftime('%Y-%m-%d %H:%M:%S')}",
+            f"Toplam dosya   : {self.project.total_files}",
+            f"Toplam satir   : {self.project.total_lines}",
+            "",
+            "PROJE BULGU OZETI",
+            thin,
+            f"[!] HIGH  : {self.project.total_high}",
+            f"[~] MEDIUM: {self.project.total_medium}",
+            f"[-] LOW   : {self.project.total_low}",
+            f"    TOPLAM: {self.project.total_findings}",
+            "",
+            hr,
+            "DOSYA BAZLI DETAYLAR",
+            hr,
+        ]
+
+        for fr in self.project.sorted_by_risk():
+            rel  = os.path.relpath(fr.filepath, self.project.directory)
+            lang = fr.static.language.upper()
+            lines += [
+                "",
+                thin,
+                f"DOSYA: {rel}  [{lang}]",
+                f"  Satir: {fr.static.total_lines} | "
+                f"H:{fr.high_count} M:{fr.medium_count} L:{fr.low_count}",
+                thin,
+            ]
+
+            if fr.static.syntax_error:
+                lines.append(f"  [!] SYNTAX HATASI: {fr.static.syntax_error}")
+
+            if fr.static.findings:
+                lines.append("  Statik Analiz Bulgulari:")
+                for f in fr.static.findings:
+                    badge = _severity_badge(f.severity)
+                    line_info = f"line {f.line}" if f.line else "genel"
+                    lines.append(f"    {badge} [{f.severity}] {f.category} | {line_info}")
+                    lines.append(f"        {f.message}")
+                    if f.suggestion:
+                        lines.append(f"        >> {f.suggestion}")
+
+            if not fr.ai.skipped and not fr.ai.error and fr.ai.findings:
+                lines.append("  AI Review Bulgulari:")
+                for f in fr.ai.findings:
+                    badge = _severity_badge(f.severity)
+                    line_info = f"line {f.line_range}" if f.line_range else "genel"
+                    lines.append(f"    {badge} [{f.severity}] {f.category} | {line_info}")
+                    lines.append(f"        {f.message}")
+                    if f.suggestion:
+                        lines.append(f"        >> {f.suggestion}")
+
+            if not fr.static.findings and (fr.ai.skipped or not fr.ai.findings):
+                lines.append("  [+] Bu dosyada bulgu tespit edilmedi.")
+
+        lines += ["", hr]
+        return lines
+
