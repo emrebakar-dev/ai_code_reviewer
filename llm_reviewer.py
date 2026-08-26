@@ -102,38 +102,42 @@ class LLMReviewer:
                 error="openai paketi kurulu değil. 'pip install openai' komutunu çalıştırın.",
             )
 
-        try:
-            client = OpenAI(api_key=self.api_key, base_url=self.base_url)
+        import time as _time
+        client = OpenAI(api_key=self.api_key, base_url=self.base_url)
+        ext = filepath.split(".")[-1].lower() if "." in filepath else "code"
+        if "localhost" in self.base_url or "11434" in self.base_url:
+            user_content = f"/no_think\n\nFile: {filepath}\n\n```{ext}\n{source_code}\n```"
+        else:
+            user_content = f"File: {filepath}\n\n```{ext}\n{source_code}\n```"
 
-            ext = filepath.split(".")[-1].lower() if "." in filepath else "code"
-            if "localhost" in self.base_url or "11434" in self.base_url:
-                user_content = f"/no_think\n\nFile: {filepath}\n\n```{ext}\n{source_code}\n```"
-            else:
-                user_content = f"File: {filepath}\n\n```{ext}\n{source_code}\n```"
-
-            response = client.chat.completions.create(
-                model=self.model,
-                messages=[
-                    {"role": "system", "content": SYSTEM_PROMPT},
-                    {"role": "user",   "content": user_content},
-                ],
-                temperature=0.2,
-                max_tokens=4096,
-            )
-            raw      = response.choices[0].message.content or ""
-            findings = self._parse_response(raw)
-            return AIReviewResult(
-                findings=findings,
-                raw_response=raw,
-                model_used=self.model,
-                parse_failed=(len(findings) == 0 and len(raw.strip()) > 0),
-            )
-
-        except Exception as exc:
-            return AIReviewResult(
-                error=f"LLM API hatası: {exc}",
-                model_used=self.model,
-            )
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                response = client.chat.completions.create(
+                    model=self.model,
+                    messages=[
+                        {"role": "system", "content": SYSTEM_PROMPT},
+                        {"role": "user",   "content": user_content},
+                    ],
+                    temperature=0.2,
+                    max_tokens=4096,
+                )
+                raw      = response.choices[0].message.content or ""
+                findings = self._parse_response(raw)
+                return AIReviewResult(
+                    findings=findings,
+                    raw_response=raw,
+                    model_used=self.model,
+                    parse_failed=(len(findings) == 0 and len(raw.strip()) > 0),
+                )
+            except Exception as exc:
+                err_str = str(exc).lower()
+                is_rate_limit = "rate" in err_str or "429" in err_str or "limit" in err_str
+                if is_rate_limit and attempt < max_retries - 1:
+                    wait = 10 * (attempt + 1)
+                    _time.sleep(wait)
+                    continue
+                return AIReviewResult(error=str(exc))
 
     def _parse_response(self, raw: str) -> list:
         # <think>...</think> tam blokları temizle

@@ -1,6 +1,8 @@
 import os
+import time
 from dataclasses import dataclass, field
 from typing import List, Tuple
+
 
 from analyzer import StaticAnalyzer, StaticAnalysisResult
 from llm_reviewer import LLMReviewer, AIReviewResult
@@ -122,13 +124,23 @@ class ProjectScanner:
                     error="--no-ai bayragi ile AI incelemesi atlandi.",
                 )
             else:
-                try:
-                    ai_result = reviewer.review(
-                        source_code=static_result.source_code,
-                        filepath=filepath,
+                # Boş dosyaları AI'ya gönderme
+                if not static_result.source_code.strip():
+                    ai_result = AIReviewResult(
+                        skipped=True,
+                        error="Kaynak kod boş — AI incelemesi atlandı.",
                     )
-                except Exception as exc:
-                    ai_result = AIReviewResult(error=str(exc))
+                else:
+                    # Groq rate limit aşımını önlemek için dosyalar arası bekleme
+                    if i > 0:
+                        time.sleep(2)
+                    try:
+                        ai_result = reviewer.review(
+                            source_code=static_result.source_code,
+                            filepath=filepath,
+                        )
+                    except Exception as exc:
+                        ai_result = AIReviewResult(error=str(exc))
 
 
             project_result.results.append(FileResult(

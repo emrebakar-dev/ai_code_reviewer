@@ -235,8 +235,16 @@ if source_type == "Proje / Klasör (ZIP)":
                     st.markdown("**AI Review Bulguları:**")
                     for f in fr.ai.findings:
                         render_finding_card(f, confidence_threshold)
+                elif not fr.ai.skipped and not fr.ai.error and not fr.ai.findings:
+                    if not getattr(fr.ai, "parse_failed", False):
+                        st.success("AI inceleme bulgusu yok.")
+                    else:
+                        st.warning("⚠️ AI yanıt verdi ama ayrıştırılamadı.")
+                elif fr.ai.error and not fr.ai.skipped:
+                    st.error(f"❌ AI hatası: {fr.ai.error}")
                 elif fr.ai.skipped:
                     st.caption(f"ℹ️ {fr.ai.error}")
+
 
         st.markdown("---")
         report_path = st.session_state.get("project_report_path")
