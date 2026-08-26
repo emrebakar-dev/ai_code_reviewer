@@ -260,23 +260,9 @@ with st.sidebar:
     file_display_name = ""
 
     if source_type == "Tek Dosya":
-        file_source = st.radio("Dosya Kaynağı:", ["Örnek Dosyalar", "Dosya Yükle", "Kod Yapıştır"])
+        file_source = st.radio("Dosya Kaynağı:", ["Dosya Yükle", "Kod Yapıştır"])
 
-        if file_source == "Örnek Dosyalar":
-            examples_dir = "examples"
-            valid_exts = (".py", ".c", ".cpp", ".cc", ".cxx", ".h", ".hpp", ".java")
-            available_files = []
-            if os.path.exists(examples_dir):
-                available_files = [f for f in os.listdir(examples_dir) if f.endswith(valid_exts)]
-            selected_example = st.selectbox("Örnek Dosya Seç:", available_files if available_files else ["hatali_kod.py"])
-            if selected_example:
-                example_path = os.path.join(examples_dir, selected_example)
-                if os.path.exists(example_path):
-                    with open(example_path, "r", encoding="utf-8") as f:
-                        code_content = f.read()
-                    file_display_name = selected_example
-
-        elif file_source == "Dosya Yükle":
+        if file_source == "Dosya Yükle":
             uploaded_file = st.file_uploader(
                 "Kaynak Dosya Yükle (.py, .c, .cpp, .java ...)",
                 type=["py", "c", "cpp", "cc", "h", "hpp", "java"]
@@ -288,6 +274,7 @@ with st.sidebar:
         elif file_source == "Kod Yapıştır":
             code_content = st.text_area("Kodu Buraya Yapıştırın:", height=250, value="def hello():\n    eval('print(123)')\n")
             file_display_name = "snippet.py"
+
 
     st.markdown("---")
     enable_ai = st.checkbox("AI İncelemesi Aktif", value=True)
