@@ -24,142 +24,163 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
     html, body, [class*="css"] {
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    /* Background accent glow */
+    .stApp {
+        background: radial-gradient(circle at 10% 20%, rgba(124, 77, 255, 0.05) 0%, transparent 40%),
+                    radial-gradient(circle at 90% 80%, rgba(0, 229, 255, 0.05) 0%, transparent 40%);
     }
 
     .main-header {
-        font-size: 2.4rem;
+        font-size: 2.6rem;
         font-weight: 800;
-        background: linear-gradient(135deg, #00E5FF 0%, #7C4DFF 100%);
+        background: linear-gradient(135deg, #00E5FF 0%, #7C4DFF 50%, #FF4081 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        margin-bottom: 0.1rem;
-        letter-spacing: -0.5px;
+        margin-bottom: 0.2rem;
+        letter-spacing: -0.8px;
     }
     .sub-header {
         font-size: 1.05rem;
-        color: #90A4AE;
-        margin-bottom: 1.8rem;
-        font-weight: 400;
+        color: #78909C;
+        margin-bottom: 2rem;
+        font-weight: 500;
     }
 
-    /* Glassmorphism Cards */
+    /* Glassmorphism Cards with Neon Glow */
     .card-high {
-        background: rgba(255, 82, 82, 0.08);
-        border: 1px solid rgba(255, 82, 82, 0.3);
+        background: linear-gradient(135deg, rgba(255, 82, 82, 0.09) 0%, rgba(255, 82, 82, 0.03) 100%);
+        border: 1px solid rgba(255, 82, 82, 0.35);
         border-left: 5px solid #FF5252;
         color: #FFFFFF;
-        padding: 1.1rem 1.3rem;
-        border-radius: 10px;
+        padding: 1.2rem 1.4rem;
+        border-radius: 12px;
         margin-bottom: 1rem;
-        backdrop-filter: blur(10px);
-        box-shadow: 0 4px 15px rgba(255, 82, 82, 0.05);
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        backdrop-filter: blur(12px);
+        box-shadow: 0 8px 24px rgba(255, 82, 82, 0.08);
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     }
     .card-high:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(255, 82, 82, 0.15);
+        transform: translateY(-3px);
+        box-shadow: 0 12px 30px rgba(255, 82, 82, 0.2);
+        border-color: rgba(255, 82, 82, 0.6);
     }
 
     .card-medium {
-        background: rgba(255, 183, 77, 0.08);
-        border: 1px solid rgba(255, 183, 77, 0.3);
+        background: linear-gradient(135deg, rgba(255, 183, 77, 0.09) 0%, rgba(255, 183, 77, 0.03) 100%);
+        border: 1px solid rgba(255, 183, 77, 0.35);
         border-left: 5px solid #FFB74D;
         color: #FFFFFF;
-        padding: 1.1rem 1.3rem;
-        border-radius: 10px;
+        padding: 1.2rem 1.4rem;
+        border-radius: 12px;
         margin-bottom: 1rem;
-        backdrop-filter: blur(10px);
-        box-shadow: 0 4px 15px rgba(255, 183, 77, 0.05);
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        backdrop-filter: blur(12px);
+        box-shadow: 0 8px 24px rgba(255, 183, 77, 0.08);
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     }
     .card-medium:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(255, 183, 77, 0.15);
+        transform: translateY(-3px);
+        box-shadow: 0 12px 30px rgba(255, 183, 77, 0.2);
+        border-color: rgba(255, 183, 77, 0.6);
     }
 
     .card-low {
-        background: rgba(102, 187, 106, 0.08);
-        border: 1px solid rgba(102, 187, 106, 0.3);
+        background: linear-gradient(135deg, rgba(102, 187, 106, 0.09) 0%, rgba(102, 187, 106, 0.03) 100%);
+        border: 1px solid rgba(102, 187, 106, 0.35);
         border-left: 5px solid #66BB6A;
         color: #FFFFFF;
-        padding: 1.1rem 1.3rem;
-        border-radius: 10px;
+        padding: 1.2rem 1.4rem;
+        border-radius: 12px;
         margin-bottom: 1rem;
-        backdrop-filter: blur(10px);
-        box-shadow: 0 4px 15px rgba(102, 187, 106, 0.05);
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        backdrop-filter: blur(12px);
+        box-shadow: 0 8px 24px rgba(102, 187, 106, 0.08);
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     }
     .card-low:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(102, 187, 106, 0.15);
+        transform: translateY(-3px);
+        box-shadow: 0 12px 30px rgba(102, 187, 106, 0.2);
+        border-color: rgba(102, 187, 106, 0.6);
     }
 
     .badge-high {
-        background: #FF5252;
+        background: linear-gradient(135deg, #FF5252 0%, #FF1744 100%);
         color: #FFFFFF;
-        padding: 3px 8px;
-        border-radius: 4px;
+        padding: 4px 10px;
+        border-radius: 6px;
         font-weight: 700;
-        font-size: 0.8rem;
-        letter-spacing: 0.5px;
+        font-size: 0.78rem;
+        letter-spacing: 0.6px;
+        box-shadow: 0 2px 8px rgba(255, 82, 82, 0.3);
     }
     .badge-medium {
-        background: #FFB74D;
-        color: #121212;
-        padding: 3px 8px;
-        border-radius: 4px;
+        background: linear-gradient(135deg, #FFB74D 0%, #FF9100 100%);
+        color: #000000;
+        padding: 4px 10px;
+        border-radius: 6px;
         font-weight: 700;
-        font-size: 0.8rem;
-        letter-spacing: 0.5px;
+        font-size: 0.78rem;
+        letter-spacing: 0.6px;
+        box-shadow: 0 2px 8px rgba(255, 183, 77, 0.3);
     }
     .badge-low {
-        background: #66BB6A;
-        color: #121212;
-        padding: 3px 8px;
-        border-radius: 4px;
+        background: linear-gradient(135deg, #66BB6A 0%, #00E676 100%);
+        color: #000000;
+        padding: 4px 10px;
+        border-radius: 6px;
         font-weight: 700;
-        font-size: 0.8rem;
-        letter-spacing: 0.5px;
+        font-size: 0.78rem;
+        letter-spacing: 0.6px;
+        box-shadow: 0 2px 8px rgba(102, 187, 106, 0.3);
     }
 
     .card-title {
         color: #FFFFFF;
         font-size: 1.15rem;
-        font-weight: 600;
+        font-weight: 700;
         margin-left: 8px;
     }
     .card-body-text {
-        color: #E0E0E0;
-        font-size: 1rem;
-        margin-top: 8px;
-        line-height: 1.5;
+        color: #ECEFF1;
+        font-size: 1.02rem;
+        margin-top: 10px;
+        line-height: 1.6;
         display: block;
     }
     .suggestion-text {
-        background: rgba(255, 255, 255, 0.04);
-        border: 1px dashed rgba(255, 255, 255, 0.15);
-        padding: 8px 12px;
-        border-radius: 6px;
+        background: rgba(0, 229, 255, 0.05);
+        border: 1px dashed rgba(0, 229, 255, 0.3);
+        padding: 10px 14px;
+        border-radius: 8px;
         color: #80DEEA;
-        font-size: 0.93rem;
-        margin-top: 10px;
+        font-size: 0.94rem;
+        margin-top: 12px;
         display: block;
         font-family: 'Fira Code', monospace;
     }
-    .welcome-card {
-        background: rgba(255, 255, 255, 0.03);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 12px;
-        padding: 2rem;
-        text-align: center;
-        margin-top: 2rem;
+
+    /* Metric Cards Custom Styling */
+    div[data-testid="stMetricValue"] {
+        font-size: 1.8rem !important;
+        font-weight: 800 !important;
+    }
+    div[data-testid="stMetric"] {
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        padding: 1rem;
+        border-radius: 10px;
+        transition: border-color 0.2s;
+    }
+    div[data-testid="stMetric"]:hover {
+        border-color: rgba(0, 229, 255, 0.3);
     }
 </style>
 """, unsafe_allow_html=True)
+
 
 st.markdown('<div class="main-header">⚡ AI Code Review Assistant</div>', unsafe_allow_html=True)
 st.markdown('<div class="sub-header">Statik Analiz + Yapay Zekâ Destekli Çok Dilli Kod Güvenliği ve İnceleme Platformu</div>', unsafe_allow_html=True)
