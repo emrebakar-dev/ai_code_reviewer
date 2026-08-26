@@ -105,10 +105,21 @@ class LLMReviewer:
         import time as _time
         client = OpenAI(api_key=self.api_key, base_url=self.base_url)
         ext = filepath.split(".")[-1].lower() if "." in filepath else "code"
-        if "localhost" in self.base_url or "11434" in self.base_url:
-            user_content = f"/no_think\n\nFile: {filepath}\n\n```{ext}\n{source_code}\n```"
+
+        # Çok büyük dosyalarda token limitini aşmamak için ilk 150 satırla sınırla
+        MAX_LINES = 150
+        lines = source_code.splitlines()
+        if len(lines) > MAX_LINES:
+            truncated_code = "\n".join(lines[:MAX_LINES])
+            truncated_note = f"\n\n# ... (dosya {len(lines)} satır, AI incelemesi ilk {MAX_LINES} satırla sınırlandırıldı)"
+            code_to_review = truncated_code + truncated_note
         else:
-            user_content = f"File: {filepath}\n\n```{ext}\n{source_code}\n```"
+            code_to_review = source_code
+
+        if "localhost" in self.base_url or "11434" in self.base_url:
+            user_content = f"/no_think\n\nFile: {filepath}\n\n```{ext}\n{code_to_review}\n```"
+        else:
+            user_content = f"File: {filepath}\n\n```{ext}\n{code_to_review}\n```"
 
         max_retries = 3
         for attempt in range(max_retries):

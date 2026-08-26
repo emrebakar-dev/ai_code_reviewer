@@ -133,7 +133,7 @@ class ProjectScanner:
                 else:
                     # Groq rate limit aşımını önlemek için dosyalar arası bekleme
                     if i > 0:
-                        time.sleep(2)
+                        time.sleep(5)
                     try:
                         ai_result = reviewer.review(
                             source_code=static_result.source_code,
