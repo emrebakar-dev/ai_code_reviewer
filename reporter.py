@@ -326,18 +326,23 @@ class ProjectReporter:
                     if f.suggestion:
                         lines.append(f"        >> {f.suggestion}")
 
-            if not fr.ai.skipped and not fr.ai.error and fr.ai.findings:
-                lines.append("  AI Review Bulgulari:")
-                for f in fr.ai.findings:
-                    badge = _severity_badge(f.severity)
-                    line_info = f"line {f.line_range}" if f.line_range else "genel"
-                    lines.append(f"    {badge} [{f.severity}] {f.category} | {line_info}")
-                    lines.append(f"        {f.message}")
-                    if f.suggestion:
-                        lines.append(f"        >> {f.suggestion}")
+            if not fr.ai.skipped and not fr.ai.error:
+                if fr.ai.findings:
+                    lines.append("  AI Review Bulgulari:")
+                    for f in fr.ai.findings:
+                        badge = _severity_badge(f.severity)
+                        line_info = f"line {f.line_range}" if f.line_range else "genel"
+                        lines.append(f"    {badge} [{f.severity}] {f.category} | {line_info}")
+                        lines.append(f"        {f.message}")
+                        if f.suggestion:
+                            lines.append(f"        >> {f.suggestion}")
+                else:
+                    lines.append("  [+] AI inceleme bulgusu yok.")
+            elif fr.ai.skipped:
+                lines.append(f"  [~] AI atlandi: {fr.ai.error}")
+            elif fr.ai.error:
+                lines.append(f"  [!] AI hatasi: {fr.ai.error}")
 
-            if not fr.static.findings and (fr.ai.skipped or not fr.ai.findings):
-                lines.append("  [+] Bu dosyada bulgu tespit edilmedi.")
 
         lines += ["", hr]
         return lines
