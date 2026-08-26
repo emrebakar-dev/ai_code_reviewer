@@ -106,8 +106,8 @@ class LLMReviewer:
         client = OpenAI(api_key=self.api_key, base_url=self.base_url)
         ext = filepath.split(".")[-1].lower() if "." in filepath else "code"
 
-        # Çok büyük dosyalarda token limitini aşmamak için ilk 150 satırla sınırla
-        MAX_LINES = 150
+        # Çok büyük dosyalarda token limitini aşmamak için ilk 100 satırla sınırla
+        MAX_LINES = 100
         lines = source_code.splitlines()
         if len(lines) > MAX_LINES:
             truncated_code = "\n".join(lines[:MAX_LINES])
@@ -149,6 +149,10 @@ class LLMReviewer:
                     _time.sleep(wait)
                     continue
                 return AIReviewResult(error=str(exc))
+
+        # Güvenlik fallback'i: retry loop beklenmedik şekilde bitmişse
+        return AIReviewResult(error="Tüm denemeler tükendi, API yanıt vermedi.")
+
 
     def _parse_response(self, raw: str) -> list:
         # <think>...</think> tam blokları temizle

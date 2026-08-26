@@ -34,14 +34,15 @@ def _is_suppressed(line: str) -> bool:
 def _postprocess_findings(findings: list, original_lines: list) -> list:
     """
     1. # noreview / // noreview etiketli satırları siler.
-    2. Aynı (satır, kategori) çiftini tekrar eden bulguları tekilleştirir;
+    2. Aynı (satır, kategori, mesaj-özeti) üçlüsünü tekrar eden bulguları tekilleştirir;
        en yüksek severity olana öncelik verir.
     """
     sev_order = {"HIGH": 3, "MEDIUM": 2, "LOW": 1}
 
     active = []
     for f in findings:
-        if f.line and f.line <= len(original_lines):
+        # f.line=0 falsy olur, bu yüzden 'is not None' kontrolü yapılmalı
+        if f.line is not None and f.line <= len(original_lines):
             if _is_suppressed(original_lines[f.line - 1]):
                 continue
         active.append(f)
@@ -49,7 +50,8 @@ def _postprocess_findings(findings: list, original_lines: list) -> list:
     seen: dict = {}
     deduped: list = []
     for f in active:
-        key = (f.line, f.category)
+        # Mesajın ilk 40 karakteri de key'e dahil: farklı kategoriler çakışmasın
+        key = (f.line, f.category, f.message[:40])
         if key not in seen:
             seen[key] = len(deduped)
             deduped.append(f)

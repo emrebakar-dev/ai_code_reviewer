@@ -86,13 +86,21 @@ def render_finding_card(f, confidence_threshold):
     line_str = f"Line {f.line}" if getattr(f, "line", None) else (f"Line {f.line_range}" if getattr(f, "line_range", None) else "Genel")
     suggestion = getattr(f, "suggestion", None)
     message = getattr(f, "message", "")
+
+    # HTML injection / XSS önlemi: içerik doğrudan HTML'e gömülmeden escape edilmeli
+    import html as _html
+    safe_message    = _html.escape(str(message))
+    safe_suggestion = _html.escape(str(suggestion)) if suggestion else None
+    safe_category   = _html.escape(str(f.category))
+
     st.markdown(f"""
     <div class="{card_class}">
-        <span class="{badge_class}">{badge_symbol} [{sev}]</span> <span class="card-title">{f.category}</span> &nbsp;|&nbsp; <code>{line_str}</code> <span style="color:#888;font-size:0.85rem">{conf_label}</span>
-        <span class="card-body-text">{message}</span>
-        {f'<span class="suggestion-text"><b>>> Öneri:</b> {suggestion}</span>' if suggestion else ''}
+        <span class="{badge_class}">{badge_symbol} [{sev}]</span> <span class="card-title">{safe_category}</span> &nbsp;|&nbsp; <code>{line_str}</code> <span style="color:#888;font-size:0.85rem">{conf_label}</span>
+        <span class="card-body-text">{safe_message}</span>
+        {f'<span class="suggestion-text"><b>>> Öneri:</b> {safe_suggestion}</span>' if safe_suggestion else ''}
     </div>
     """, unsafe_allow_html=True)
+
 
 
 with st.sidebar:
