@@ -106,8 +106,8 @@ class LLMReviewer:
         client = OpenAI(api_key=self.api_key, base_url=self.base_url)
         ext = filepath.split(".")[-1].lower() if "." in filepath else "code"
 
-        # Çok büyük dosyalarda token limitini aşmamak için ilk 100 satırla sınırla
-        MAX_LINES = 100
+        # Çok büyük dosyalarda token limitini aşmamak için ilk 80 satırla sınırla
+        MAX_LINES = 80
         lines = source_code.splitlines()
         if len(lines) > MAX_LINES:
             truncated_code = "\n".join(lines[:MAX_LINES])

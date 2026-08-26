@@ -92,10 +92,11 @@ def render_finding_card(f, confidence_threshold):
     safe_message    = _html.escape(str(message))
     safe_suggestion = _html.escape(str(suggestion)) if suggestion else None
     safe_category   = _html.escape(str(f.category))
+    safe_line_str   = _html.escape(str(line_str))
 
     st.markdown(f"""
     <div class="{card_class}">
-        <span class="{badge_class}">{badge_symbol} [{sev}]</span> <span class="card-title">{safe_category}</span> &nbsp;|&nbsp; <code>{line_str}</code> <span style="color:#888;font-size:0.85rem">{conf_label}</span>
+        <span class="{badge_class}">{badge_symbol} [{sev}]</span> <span class="card-title">{safe_category}</span> &nbsp;|&nbsp; <code>{safe_line_str}</code> <span style="color:#888;font-size:0.85rem">{conf_label}</span>
         <span class="card-body-text">{safe_message}</span>
         {f'<span class="suggestion-text"><b>>> Öneri:</b> {safe_suggestion}</span>' if safe_suggestion else ''}
     </div>
