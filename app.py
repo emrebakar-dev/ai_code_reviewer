@@ -30,160 +30,190 @@ st.markdown("""
         font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
     }
 
-    /* Background accent glow */
+    /* Overall Layout & Background */
     .stApp {
-        background: radial-gradient(circle at 10% 20%, rgba(124, 77, 255, 0.05) 0%, transparent 40%),
-                    radial-gradient(circle at 90% 80%, rgba(0, 229, 255, 0.05) 0%, transparent 40%);
+        background-color: #0B0F17 !important;
+        color: #E2E8F0;
     }
 
+    /* Custom Top Navigation / Branding Header */
+    .brand-container {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .brand-icon {
+        background: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%);
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        box-shadow: 0 4px 20px rgba(139, 92, 246, 0.3);
+    }
     .main-header {
-        font-size: 2.6rem;
+        font-size: 2.2rem;
         font-weight: 800;
-        background: linear-gradient(135deg, #00E5FF 0%, #7C4DFF 50%, #FF4081 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        margin-bottom: 0.2rem;
-        letter-spacing: -0.8px;
+        color: #F8FAFC;
+        margin: 0;
+        letter-spacing: -0.5px;
     }
     .sub-header {
-        font-size: 1.05rem;
-        color: #78909C;
-        margin-bottom: 2rem;
-        font-weight: 500;
+        font-size: 0.95rem;
+        color: #94A3B8;
+        margin: 0;
+        font-weight: 400;
     }
 
-    /* Glassmorphism Cards with Neon Glow */
+    /* Override Sidebar Styling */
+    section[data-testid="stSidebar"] {
+        background-color: #111827 !important;
+        border-right: 1px solid rgba(255, 255, 255, 0.07) !important;
+    }
+
+    /* Minimal Linear-style Findings Cards */
     .card-high {
-        background: linear-gradient(135deg, rgba(255, 82, 82, 0.09) 0%, rgba(255, 82, 82, 0.03) 100%);
-        border: 1px solid rgba(255, 82, 82, 0.35);
-        border-left: 5px solid #FF5252;
-        color: #FFFFFF;
-        padding: 1.2rem 1.4rem;
-        border-radius: 12px;
-        margin-bottom: 1rem;
-        backdrop-filter: blur(12px);
-        box-shadow: 0 8px 24px rgba(255, 82, 82, 0.08);
-        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        background: rgba(239, 68, 68, 0.06);
+        border: 1px solid rgba(239, 68, 68, 0.25);
+        border-left: 4px solid #EF4444;
+        border-radius: 10px;
+        padding: 1.1rem 1.3rem;
+        margin-bottom: 0.9rem;
+        transition: all 0.2s ease-in-out;
     }
     .card-high:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 12px 30px rgba(255, 82, 82, 0.2);
-        border-color: rgba(255, 82, 82, 0.6);
+        border-color: rgba(239, 68, 68, 0.5);
+        background: rgba(239, 68, 68, 0.1);
     }
 
     .card-medium {
-        background: linear-gradient(135deg, rgba(255, 183, 77, 0.09) 0%, rgba(255, 183, 77, 0.03) 100%);
-        border: 1px solid rgba(255, 183, 77, 0.35);
-        border-left: 5px solid #FFB74D;
-        color: #FFFFFF;
-        padding: 1.2rem 1.4rem;
-        border-radius: 12px;
-        margin-bottom: 1rem;
-        backdrop-filter: blur(12px);
-        box-shadow: 0 8px 24px rgba(255, 183, 77, 0.08);
-        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        background: rgba(245, 158, 11, 0.06);
+        border: 1px solid rgba(245, 158, 11, 0.25);
+        border-left: 4px solid #F59E0B;
+        border-radius: 10px;
+        padding: 1.1rem 1.3rem;
+        margin-bottom: 0.9rem;
+        transition: all 0.2s ease-in-out;
     }
     .card-medium:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 12px 30px rgba(255, 183, 77, 0.2);
-        border-color: rgba(255, 183, 77, 0.6);
+        border-color: rgba(245, 158, 11, 0.5);
+        background: rgba(245, 158, 11, 0.1);
     }
 
     .card-low {
-        background: linear-gradient(135deg, rgba(102, 187, 106, 0.09) 0%, rgba(102, 187, 106, 0.03) 100%);
-        border: 1px solid rgba(102, 187, 106, 0.35);
-        border-left: 5px solid #66BB6A;
-        color: #FFFFFF;
-        padding: 1.2rem 1.4rem;
-        border-radius: 12px;
-        margin-bottom: 1rem;
-        backdrop-filter: blur(12px);
-        box-shadow: 0 8px 24px rgba(102, 187, 106, 0.08);
-        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        background: rgba(16, 185, 129, 0.06);
+        border: 1px solid rgba(16, 185, 129, 0.25);
+        border-left: 4px solid #10B981;
+        border-radius: 10px;
+        padding: 1.1rem 1.3rem;
+        margin-bottom: 0.9rem;
+        transition: all 0.2s ease-in-out;
     }
     .card-low:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 12px 30px rgba(102, 187, 106, 0.2);
-        border-color: rgba(102, 187, 106, 0.6);
+        border-color: rgba(16, 185, 129, 0.5);
+        background: rgba(16, 185, 129, 0.1);
     }
 
     .badge-high {
-        background: linear-gradient(135deg, #FF5252 0%, #FF1744 100%);
-        color: #FFFFFF;
-        padding: 4px 10px;
+        background: rgba(239, 68, 68, 0.2);
+        color: #FCA5A5;
+        border: 1px solid rgba(239, 68, 68, 0.4);
+        padding: 3px 8px;
         border-radius: 6px;
         font-weight: 700;
-        font-size: 0.78rem;
-        letter-spacing: 0.6px;
-        box-shadow: 0 2px 8px rgba(255, 82, 82, 0.3);
+        font-size: 0.75rem;
     }
     .badge-medium {
-        background: linear-gradient(135deg, #FFB74D 0%, #FF9100 100%);
-        color: #000000;
-        padding: 4px 10px;
+        background: rgba(245, 158, 11, 0.2);
+        color: #FDE68A;
+        border: 1px solid rgba(245, 158, 11, 0.4);
+        padding: 3px 8px;
         border-radius: 6px;
         font-weight: 700;
-        font-size: 0.78rem;
-        letter-spacing: 0.6px;
-        box-shadow: 0 2px 8px rgba(255, 183, 77, 0.3);
+        font-size: 0.75rem;
     }
     .badge-low {
-        background: linear-gradient(135deg, #66BB6A 0%, #00E676 100%);
-        color: #000000;
-        padding: 4px 10px;
+        background: rgba(16, 185, 129, 0.2);
+        color: #A7F3D0;
+        border: 1px solid rgba(16, 185, 129, 0.4);
+        padding: 3px 8px;
         border-radius: 6px;
         font-weight: 700;
-        font-size: 0.78rem;
-        letter-spacing: 0.6px;
-        box-shadow: 0 2px 8px rgba(102, 187, 106, 0.3);
+        font-size: 0.75rem;
     }
 
     .card-title {
-        color: #FFFFFF;
-        font-size: 1.15rem;
-        font-weight: 700;
+        color: #F8FAFC;
+        font-size: 1.05rem;
+        font-weight: 600;
         margin-left: 8px;
     }
     .card-body-text {
-        color: #ECEFF1;
-        font-size: 1.02rem;
-        margin-top: 10px;
-        line-height: 1.6;
+        color: #CBD5E1;
+        font-size: 0.98rem;
+        margin-top: 8px;
+        line-height: 1.5;
         display: block;
     }
     .suggestion-text {
-        background: rgba(0, 229, 255, 0.05);
-        border: 1px dashed rgba(0, 229, 255, 0.3);
-        padding: 10px 14px;
-        border-radius: 8px;
-        color: #80DEEA;
-        font-size: 0.94rem;
-        margin-top: 12px;
+        background: #0F172A;
+        border: 1px solid #1E293B;
+        padding: 8px 12px;
+        border-radius: 6px;
+        color: #38BDF8;
+        font-size: 0.9rem;
+        margin-top: 10px;
         display: block;
         font-family: 'Fira Code', monospace;
     }
 
-    /* Metric Cards Custom Styling */
-    div[data-testid="stMetricValue"] {
-        font-size: 1.8rem !important;
-        font-weight: 800 !important;
-    }
+    /* Custom Dashboard Metrics Boxes */
     div[data-testid="stMetric"] {
-        background: rgba(255, 255, 255, 0.02);
-        border: 1px solid rgba(255, 255, 255, 0.07);
-        padding: 1rem;
-        border-radius: 10px;
-        transition: border-color 0.2s;
+        background-color: #111827 !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        border-radius: 10px !important;
+        padding: 1rem !important;
     }
-    div[data-testid="stMetric"]:hover {
-        border-color: rgba(0, 229, 255, 0.3);
+    div[data-testid="stMetricLabel"] {
+        color: #94A3B8 !important;
+        font-weight: 500 !important;
+    }
+    div[data-testid="stMetricValue"] {
+        color: #F8FAFC !important;
+        font-weight: 700 !important;
+    }
+
+    /* Streamlit Tabs Customization */
+    button[data-baseweb="tab"] {
+        background: transparent !important;
+        color: #94A3B8 !important;
+        font-weight: 600 !important;
+        border-bottom: 2px solid transparent !important;
+    }
+    button[aria-selected="true"] {
+        color: #38BDF8 !important;
+        border-bottom-color: #38BDF8 !important;
     }
 </style>
 """, unsafe_allow_html=True)
 
 
-st.markdown('<div class="main-header">⚡ AI Code Review Assistant</div>', unsafe_allow_html=True)
-st.markdown('<div class="sub-header">Statik Analiz + Yapay Zekâ Destekli Çok Dilli Kod Güvenliği ve İnceleme Platformu</div>', unsafe_allow_html=True)
+
+st.markdown("""
+<div class="brand-container">
+    <div class="brand-icon">⚡</div>
+    <div>
+        <div class="main-header">AI Code Review Assistant</div>
+        <div class="sub-header">Statik Analiz + Yapay Zekâ Destekli Kod Güvenliği ve İnceleme Platformu</div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
 
 
 
@@ -551,33 +581,37 @@ else:
                 st.text_area("Rapor Önizleme:", value=report_txt, height=400)
     else:
         st.markdown("""
-        <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; padding: 2.5rem; text-align: center; margin-top: 1rem;">
-            <h2 style="color: #00E5FF; font-weight: 700; margin-bottom: 0.5rem;">🚀 Hoş Geldiniz!</h2>
-            <p style="color: #B0BEC5; font-size: 1.05rem; max-width: 600px; margin: 0 auto 1.5rem auto;">
-                Analiz yapmak için sol menüden <b>Tek Dosya</b> yükleyin veya projenizi <b>ZIP</b> olarak yükleyip <b>🔍 Analiz Et</b> butonuna tıklayın.
+        <div style="background: #111827; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 14px; padding: 3rem 2rem; text-align: center; margin-top: 1rem;">
+            <div style="display: inline-flex; align-items: center; justify-content: center; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.2); width: 60px; height: 60px; border-radius: 16px; margin-bottom: 1.2rem; font-size: 1.8rem;">
+                ⚡
+            </div>
+            <h2 style="color: #F8FAFC; font-weight: 700; margin-bottom: 0.6rem; font-size: 1.6rem;">Analize Başlamaya Hazır Mısınız?</h2>
+            <p style="color: #94A3B8; font-size: 1rem; max-width: 550px; margin: 0 auto 2rem auto; line-height: 1.6;">
+                Sol menüden tek bir dosya yükleyin, projenizin yerel klasör yolunu yapıştırın veya ZIP olarak yükleyip <b>🔍 Analiz Et</b> butonuna tıklayın.
             </p>
-            <div style="display: flex; justify-content: center; gap: 1.5rem; flex-wrap: wrap; margin-top: 1.5rem;">
-                <div style="background: rgba(0, 229, 255, 0.05); border: 1px solid rgba(0, 229, 255, 0.2); padding: 1rem 1.5rem; border-radius: 10px; width: 180px;">
-                    <div style="font-size: 1.5rem;">🐍</div>
-                    <div style="font-weight: 600; color: #FFF; margin-top: 4px;">Python</div>
-                    <div style="font-size: 0.8rem; color: #78909C;">AST & Güvenlik</div>
+            <div style="display: flex; justify-content: center; gap: 1.2rem; flex-wrap: wrap;">
+                <div style="background: #1F2937; border: 1px solid rgba(255, 255, 255, 0.06); padding: 1.2rem 1rem; border-radius: 12px; width: 160px; text-align: center;">
+                    <div style="font-size: 1.6rem;">🐍</div>
+                    <div style="font-weight: 600; color: #F1F5F9; margin-top: 6px; font-size: 0.95rem;">Python</div>
+                    <div style="font-size: 0.78rem; color: #64748B; margin-top: 2px;">AST & Güvenlik</div>
                 </div>
-                <div style="background: rgba(124, 77, 255, 0.05); border: 1px solid rgba(124, 77, 255, 0.2); padding: 1rem 1.5rem; border-radius: 10px; width: 180px;">
-                    <div style="font-size: 1.5rem;">⚡</div>
-                    <div style="font-weight: 600; color: #FFF; margin-top: 4px;">C / C++</div>
-                    <div style="font-size: 0.8rem; color: #78909C;">Bellek & Buffer</div>
+                <div style="background: #1F2937; border: 1px solid rgba(255, 255, 255, 0.06); padding: 1.2rem 1rem; border-radius: 12px; width: 160px; text-align: center;">
+                    <div style="font-size: 1.6rem;">⚡</div>
+                    <div style="font-weight: 600; color: #F1F5F9; margin-top: 6px; font-size: 0.95rem;">C / C++</div>
+                    <div style="font-size: 0.78rem; color: #64748B; margin-top: 2px;">Bellek & Sızıntı</div>
                 </div>
-                <div style="background: rgba(255, 183, 77, 0.05); border: 1px solid rgba(255, 183, 77, 0.2); padding: 1rem 1.5rem; border-radius: 10px; width: 180px;">
-                    <div style="font-size: 1.5rem;">☕</div>
-                    <div style="font-weight: 600; color: #FFF; margin-top: 4px;">Java</div>
-                    <div style="font-size: 0.8rem; color: #78909C;">SQLi & Inj.</div>
+                <div style="background: #1F2937; border: 1px solid rgba(255, 255, 255, 0.06); padding: 1.2rem 1rem; border-radius: 12px; width: 160px; text-align: center;">
+                    <div style="font-size: 1.6rem;">☕</div>
+                    <div style="font-weight: 600; color: #F1F5F9; margin-top: 6px; font-size: 0.95rem;">Java</div>
+                    <div style="font-size: 0.78rem; color: #64748B; margin-top: 2px;">SQLi & Enjeksiyon</div>
                 </div>
-                <div style="background: rgba(102, 187, 106, 0.05); border: 1px solid rgba(102, 187, 106, 0.2); padding: 1rem 1.5rem; border-radius: 10px; width: 180px;">
-                    <div style="font-size: 1.5rem;">🤖</div>
-                    <div style="font-weight: 600; color: #FFF; margin-top: 4px;">Qwen 27B AI</div>
-                    <div style="font-size: 0.8rem; color: #78909C;">Derin Analiz</div>
+                <div style="background: #1F2937; border: 1px solid rgba(255, 255, 255, 0.06); padding: 1.2rem 1rem; border-radius: 12px; width: 160px; text-align: center;">
+                    <div style="font-size: 1.6rem;">🤖</div>
+                    <div style="font-weight: 600; color: #F1F5F9; margin-top: 6px; font-size: 0.95rem;">Qwen AI</div>
+                    <div style="font-size: 0.78rem; color: #64748B; margin-top: 2px;">Derin Kod Analizi</div>
                 </div>
             </div>
         </div>
         """, unsafe_allow_html=True)
+
 
