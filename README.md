@@ -1,14 +1,14 @@
 # AI Code Review Assistant
 
-Python ve C/C++ kaynak kodlarını **iki aşamalı (Statik Analiz + Yapay Zekâ)** olarak inceleyen, hem **Web Arayüzü (Streamlit UI)** hem de **Terminal (CLI)** destekli çok dilli ve modüler kod inceleme aracı.
+Python, C/C++ ve Java kaynak kodlarını **iki aşamalı (Statik Analiz + Yapay Zekâ)** olarak inceleyen, hem **Web Arayüzü (Streamlit UI)** hem de **Terminal (CLI)** destekli çok dilli ve modüler kod inceleme aracı.
 
 ---
 
 ## Projenin Amacı
 
 Yalnızca LLM'e kod gönderip yorum almak yerine, iki aşamalı bir analiz mimarisi kullanır:
-1. **Statik Kod Analizi:** Python için `ast` modülü, C/C++ için özel kural motoru ile kod çalıştırılmadan deterministik ve kesin güvenlik/kalite bulgularının tespiti.
-2. **AI Code Review:** OpenAI uyumlu LLM API (Groq, Ollama, Gemini vb.) ile dilden bağımsız potansiyel hatalar, okunabilirlik ve sürdürülebilirlik incelemesi.
+1. **Statik Kod Analizi:** Python için `ast` modülü, C/C++ ve Java için özel regex kural motorları ile kod çalıştırılmadan deterministik ve kesin güvenlik/kalite bulgularının tespiti.
+2. **AI Code Review:** OpenAI uyumlu LLM API (Groq, Qwen, Ollama vb.) ile dilden bağımsız potansiyel hatalar, okunabilirlik ve sürdürülebilirlik incelemesi.
 
 Statik analiz sonuçları ile AI sonuçları raporda birbirinden açıkça ayrılır.
 
@@ -19,21 +19,29 @@ Statik analiz sonuçları ile AI sonuçları raporda birbirinden açıkça ayrı
 ### Desteklenen Diller
 - **Python:** `.py`
 - **C / C++:** `.c`, `.cpp`, `.cc`, `.cxx`, `.h`, `.hpp`
+- **Java:** `.java`
 
 ### Statik Analiz (LLM/İnternet Bağımsız)
 - **Python:** Syntax hataları, `eval()`, `exec()`, `subprocess(..., shell=True)`, `os.system()`, `os.popen()`, çıplak `except:`, hard-coded secrets, uzun fonksiyonlar, fazla parametreler, derin iç içe geçmiş kodlar.
 - **C / C++:** Buffer Overflow riskleri (`strcpy`, `strcat`, `gets`, `sprintf`), Kabuk Enjeksiyonu (`system()`), Format String Açıkları (`printf(var)`), Bellek Güvenliği (`malloc`/`realloc` NULL kontrolü ve free uyarısı, raw `new` kullanımı), Hard-coded C/C++ secrets.
+- **Java:** SQL Injection tespiti, `Runtime.exec()` ve `ProcessBuilder` güvenliği, `ObjectInputStream` güvensiz deserialization, `printStackTrace()` ile sızıntı tespiti, boş `catch` blokları, `String ==` referans karşılaştırma uyarısı, hassas log yazımı.
+
+### False-Positive (Hatalı Bulgu) Filtreleme
+- **Inline Suppression:** `# noreview` (Python) veya `// noreview` (C/C++/Java) etiketi içeren satırlar statik analizden tamamen muaf tutulur.
+- **Deduplication:** Aynı satır ve kategorideki tekrarlayan bulgular otomatik tekilleştirilir.
+- **Placeholder & Kısa Değer Filtresi:** `"changeme"`, `"your_key_here"`, `"example"`, `"password"` gibi test/placeholder değerler gerçek secret olarak işaretlenmez.
+- **Confidence Score & UI Slider:** Her bulguya güven skoru atanır (0.0 - 1.0); arayüzdeki slider ile düşük güvenli bulgular gizlenebilir.
+
+### Tüm Klasör / Proje Taraması
+- **CLI:** `python main.py --dir /proje_klasoru/` komutu ile tüm proje özyinelemeli (recursive) taranır.
+- **Web UI:** İster bilgisayarınızdaki yerel klasör yolunu yapıştırın, ister projenizi `.zip` olarak yükleyin.
+- Toplu proje bulgu özeti, en riskli dosyalar sıralaması ve tek tıkla indirilebilir birleşik proje raporu.
 
 ### AI Code Review
+- **Model:** `qwen/qwen3.6-27b` veya Groq üzerindeki diğer OpenAI-uyumlu LLM modelleri.
 - **Kategoriler:** Potential Bugs, Security, Performance, Code Quality, Readability, Maintainability.
-- **Önem Seviyeleri:** `HIGH`, `MEDIUM`, `LOW`.
-- **Otomatik Onarım (Auto-Repair):** Yanıt yarım kalsa bile kesintiye uğramış JSON'u otomatik onarır.
-- **Hızlı Entegrasyon:** Groq, Ollama (Local), Gemini veya OpenAI ile tam uyumlu.
-
-### Arayüz ve Raporlama
-- **Web UI (Streamlit):** Görsel kartlar, karanlık tema uyumu, dosya yükleme/kod yapıştırma, renkli risk sayaçları ve canlı rapor indirme.
-- **Terminal (CLI):** ANSI renkli ve sembollü düzenli çıktı.
-- **TXT Raporu:** Her analiz sonunda `reports/` klasörüne zaman damgalı `.txt` rapor kaydı.
+- **Auto-Repair:** Kesintiye uğramış JSON yanıtlarını otomatik onarır.
+- **Rate-Limit Koruması:** Dosyalar arası otomatik bekleme ve üstel geri çekilme (exponential backoff) ile API kotası korunur.
 
 ---
 
@@ -73,7 +81,7 @@ cp .env.example .env
 ```env
 OPENAI_API_KEY=gsk_your_groq_api_key_here
 OPENAI_BASE_URL=https://api.groq.com/openai/v1
-OPENAI_MODEL=groq/compound-mini
+OPENAI_MODEL=qwen/qwen3.6-27b
 ```
 
 > **Not:** API key girilmezse AI taraması otomatik atlanır; statik analiz kesintisiz çalışmaya devam eder.
@@ -87,36 +95,30 @@ OPENAI_MODEL=groq/compound-mini
 ```bash
 streamlit run app.py
 ```
-> Otomatik olarak tarayıcınızda açılır (`http://localhost:8501`). Dosya yükleyebilir, kod yapıştırabilir veya örnek Python / C++ dosyalarını görsel olarak inceleyebilirsiniz.
+> Otomatik olarak tarayıcınızda açılır (`http://localhost:8501`). Tek dosya yükleyebilir, kod yapıştırabilir veya bir projenin klasör yolunu girerek tüm projeyi taratabilirsiniz.
 
 ### 2. Terminal (CLI) Kullanımı
 
 ```bash
-# Python örneği
+# Tek dosya analizi (Python, C/C++, Java)
 python main.py examples/hatali_kod.py
-
-# C++ örneği
 python main.py examples/hatali_kod.cpp
+python main.py examples/hatali_kod.java
 
-# Sadece statik analiz (AI olmadan)
-python main.py examples/hatali_kod.cpp --no-ai
+# Yalnızca statik analiz (AI olmadan)
+python main.py examples/hatali_kod.py --no-ai
+
+# Tüm proje / klasör taraması
+python main.py --dir /path/to/project
+
+# Klasör taraması (AI olmadan)
+python main.py --dir /path/to/project --no-ai
 ```
 
 ---
 
-## Proje Mimarisi
+## Raporlama
 
-```
-ai_code_reviewer/
-├── app.py           # Streamlit tabanlı Web Arayüzü
-├── main.py          # Terminal (CLI) giriş noktası
-├── analyzer.py      # Python (AST) ve C/C++ Statik Kod Analizörü
-├── llm_reviewer.py  # Çok dilli LLM entegrasyonu (OpenAI / Groq / Ollama API)
-├── reporter.py      # Terminal & TXT rapor üretici
-├── requirements.txt # Python bağımlılıkları
-├── .env.example     # Örnek ortam değişkenleri şablonu
-├── .gitignore       # Git yoksayma kuralları (API key gizleme dahil)
-├── README.md        # Proje dokümantasyonu
-├── examples/        # Test için örnek hatalı Python ve C++ dosyaları
-└── reports/         # Otomatik oluşturulan zaman damgalı analiz raporları
-```
+Yapılan her analiz sonunda `reports/` klasörüne zaman damgalı `.txt` rapor kaydedilir:
+- `reports/code_review_YYYY_MM_DD_HHMM.txt` (Tek dosya raporu)
+- `reports/project_review_YYYY_MM_DD_HHMM.txt` (Toplu proje raporu)
