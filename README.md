@@ -1,124 +1,129 @@
-# AI Code Review Assistant
+# AI Code Reviewer
 
-Python, C/C++ ve Java kaynak kodlarını **iki aşamalı (Statik Analiz + Yapay Zekâ)** olarak inceleyen, hem **Web Arayüzü (Streamlit UI)** hem de **Terminal (CLI)** destekli çok dilli ve modüler kod inceleme aracı.
-
----
-
-## Projenin Amacı
-
-Yalnızca LLM'e kod gönderip yorum almak yerine, iki aşamalı bir analiz mimarisi kullanır:
-1. **Statik Kod Analizi:** Python için `ast` modülü, C/C++ ve Java için özel regex kural motorları ile kod çalıştırılmadan deterministik ve kesin güvenlik/kalite bulgularının tespiti.
-2. **AI Code Review:** OpenAI uyumlu LLM API (Groq, Qwen, Ollama vb.) ile dilden bağımsız potansiyel hatalar, okunabilirlik ve sürdürülebilirlik incelemesi.
-
-Statik analiz sonuçları ile AI sonuçları raporda birbirinden açıkça ayrılır.
+AI Code Reviewer, yazılımlarınızdaki güvenlik zafiyetlerini, kod kalitesi ihlallerini, performans ve karmaşıklık problemlerini hem statik analiz kuralları hem de yapay zekâ (Groq / Qwen LLM) desteğiyle otomatik olarak tespit eden çok dilli bir kod inceleme platformudur.
 
 ---
 
-## Özellikler
+## Öne Çıkan Özellikler
 
-### Desteklenen Diller
-- **Python:** `.py`
-- **C / C++:** `.c`, `.cpp`, `.cc`, `.cxx`, `.h`, `.hpp`
-- **Java:** `.java`
+- **Çok Dilli Statik Analiz**:
+  - **Python**: AST tabanlı analiz (eval/exec, subprocess shell=True, hardcoded secrets, bare except, cyclomatic complexity, uzun fonksiyonlar).
+  - **C / C++**: Buffer overflow (strcpy/sprintf), format string açıkları, kabuk enjeksiyonu (system()), bellek yönetimi (RAII/unique_ptr önerisi).
+  - **Java**: SQL Injection, güvensiz deserialization (readObject), printStackTrace sızıntıları, boş catch blokları, String == hataları.
+  - **Web & Frontend (CSS / HTML / JS / TS)**:
+    - **CSS**: !important aşırı kullanımı, güvensiz HTTP asset yüklemeleri, @import performans riski, aşırı yüksek z-index.
+    - **JavaScript / TypeScript**: innerHTML XSS zafiyetleri, document.write, localStorage üzerinde token saklama, eval(), console.log sızıntıları.
+    - **HTML**: Inline event handler'lar, target="_blank" rel="noopener" eksikliği, güvensiz HTTP script çağrıları, alt etiketi eksik resimler.
+- **Yapay Zekâ (AI) İncelemesi**:
+  - Groq API üzerinden çalışan Qwen 2.7B LLM entegrasyonu.
+  - Yanlış pozitif (False-Positive) filtreleme, satır bazlı deduping ve noreview bastırma desteği.
+- **Next.js 14 + FastAPI Modern Web Arayüzü**:
+  - Vercel / Linear tasarım anlayışıyla hazırlanmış, ferah ve canlı dark studio teması.
+  - Tek dosya yükleme, kod yapıştırma, yerel klasör yolu taraması ve ZIP arşivi yükleme modları.
+  - Canlı % ilerleme çubuğu, HIGH / MEDIUM / LOW renk kodlu bulgu kartları ve tek tıkla TXT raporu indirme.
+- **CLI (Komut Satırı) Desteği**:
+  - Otomatik CI/CD veya lokal terminal taramaları için `--dir` ve `--no-ai` bayrakları.
 
-### Statik Analiz (LLM/İnternet Bağımsız)
-- **Python:** Syntax hataları, `eval()`, `exec()`, `subprocess(..., shell=True)`, `os.system()`, `os.popen()`, çıplak `except:`, hard-coded secrets, uzun fonksiyonlar, fazla parametreler, derin iç içe geçmiş kodlar.
-- **C / C++:** Buffer Overflow riskleri (`strcpy`, `strcat`, `gets`, `sprintf`), Kabuk Enjeksiyonu (`system()`), Format String Açıkları (`printf(var)`), Bellek Güvenliği (`malloc`/`realloc` NULL kontrolü ve free uyarısı, raw `new` kullanımı), Hard-coded C/C++ secrets.
-- **Java:** SQL Injection tespiti, `Runtime.exec()` ve `ProcessBuilder` güvenliği, `ObjectInputStream` güvensiz deserialization, `printStackTrace()` ile sızıntı tespiti, boş `catch` blokları, `String ==` referans karşılaştırma uyarısı, hassas log yazımı.
+---
 
-### False-Positive (Hatalı Bulgu) Filtreleme
-- **Inline Suppression:** `# noreview` (Python) veya `// noreview` (C/C++/Java) etiketi içeren satırlar statik analizden tamamen muaf tutulur.
-- **Deduplication:** Aynı satır ve kategorideki tekrarlayan bulgular otomatik tekilleştirilir.
-- **Placeholder & Kısa Değer Filtresi:** `"changeme"`, `"your_key_here"`, `"example"`, `"password"` gibi test/placeholder değerler gerçek secret olarak işaretlenmez.
-- **Confidence Score & UI Slider:** Her bulguya güven skoru atanır (0.0 - 1.0); arayüzdeki slider ile düşük güvenli bulgular gizlenebilir.
+## Proje Yapısı
 
-### Tüm Klasör / Proje Taraması
-- **CLI:** `python main.py --dir /proje_klasoru/` komutu ile tüm proje özyinelemeli (recursive) taranır.
-- **Web UI:** İster bilgisayarınızdaki yerel klasör yolunu yapıştırın, ister projenizi `.zip` olarak yükleyin.
-- Toplu proje bulgu özeti, en riskli dosyalar sıralaması ve tek tıkla indirilebilir birleşik proje raporu.
-
-### AI Code Review
-- **Model:** `qwen/qwen3.6-27b` veya Groq üzerindeki diğer OpenAI-uyumlu LLM modelleri.
-- **Kategoriler:** Potential Bugs, Security, Performance, Code Quality, Readability, Maintainability.
-- **Auto-Repair:** Kesintiye uğramış JSON yanıtlarını otomatik onarır.
-- **Rate-Limit Koruması:** Dosyalar arası otomatik bekleme ve üstel geri çekilme (exponential backoff) ile API kotası korunur.
+```
+ai_code_reviewer/
+├── api.py               # FastAPI REST backend servisi
+├── analyzer.py          # Python, C/C++, Java, CSS, HTML, JS/TS statik analiz motoru
+├── scanner.py           # Çoklu dosya ve klasör tarama motoru
+├── llm_reviewer.py      # Groq / Qwen AI inceleme modülü
+├── reporter.py          # Konsol ve TXT rapor üretici
+├── main.py              # CLI (Komut satırı) arayüzü
+├── app.py               # Streamlit web arayüzü (yedek)
+├── requirements.txt     # Python bağımlılıkları
+├── examples/            # Örnek test dosyaları (.py, .cpp, .java, .css, .js)
+└── frontend/            # Next.js 14 + Tailwind CSS web uygulaması
+```
 
 ---
 
 ## Kurulum
 
-### 1. Depoyu klonlayın
-
+### 1. Depoyu Klonlayın
 ```bash
 git clone https://github.com/emrebakar-dev/ai_code_reviewer.git
 cd ai_code_reviewer
 ```
 
-### 2. Virtual Environment Oluşturma
-
+### 2. Python Sanal Ortamını Oluşturun ve Bağımlılıkları Yükleyin
 ```bash
 python3 -m venv venv
-source venv/bin/activate       # macOS / Linux
-# venv\Scripts\activate        # Windows
-```
-
-### 3. Bağımlılıkların Kurulumu
-
-```bash
+source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 4. `.env` Yapılandırması
-
-Ortam dosyasını kopyalayın:
-
-```bash
-cp .env.example .env
-```
-
-`.env` dosyasını açıp API key'inizi girin (Groq ücretsizdir):
-
+### 3. Çevre Değişkenlerini Ayarlayın
+Kök dizinde `.env` dosyası oluşturun ve Groq API anahtarınızı ekleyin:
 ```env
-OPENAI_API_KEY=gsk_your_groq_api_key_here
+OPENAI_API_KEY=your_groq_api_key_here
 OPENAI_BASE_URL=https://api.groq.com/openai/v1
 OPENAI_MODEL=qwen/qwen3.6-27b
 ```
 
-> **Not:** API key girilmezse AI taraması otomatik atlanır; statik analiz kesintisiz çalışmaya devam eder.
+---
+
+## Çalıştırma Modları
+
+### Mod 1: Next.js + FastAPI Web Arayüzü (Tavsiye Edilen)
+
+**1. Terminal — FastAPI Backend Servisini Başlatın (Port 8000):**
+```bash
+source venv/bin/activate
+uvicorn api:app --reload --port 8000
+```
+
+**2. Terminal — Next.js Frontend Uygulamasını Başlatın (Port 3000):**
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Tarayıcınızda `http://localhost:3000` adresini açarak kullanabilirsiniz.
 
 ---
 
-## Kullanım
+### Mod 2: CLI (Komut Satırı) Kullanımı
 
-### 1. Web Arayüzü (Streamlit UI)
+**Tek Dosya Analizi:**
+```bash
+python3 main.py --file examples/hatali_kod.py
+```
 
+**Tüm Proje / Klasör Taraması:**
+```bash
+python3 main.py --dir examples
+```
+
+**Yalnızca Statik Analiz (AI İncelemesini Kapatma):**
+```bash
+python3 main.py --dir examples --no-ai
+```
+
+---
+
+### Mod 3: Streamlit Arayüzü (Yedek)
 ```bash
 streamlit run app.py
 ```
-> Otomatik olarak tarayıcınızda açılır (`http://localhost:8501`). Tek dosya yükleyebilir, kod yapıştırabilir veya bir projenin klasör yolunu girerek tüm projeyi taratabilirsiniz.
-
-### 2. Terminal (CLI) Kullanımı
-
-```bash
-# Tek dosya analizi (Python, C/C++, Java)
-python main.py examples/hatali_kod.py
-python main.py examples/hatali_kod.cpp
-python main.py examples/hatali_kod.java
-
-# Yalnızca statik analiz (AI olmadan)
-python main.py examples/hatali_kod.py --no-ai
-
-# Tüm proje / klasör taraması
-python main.py --dir /path/to/project
-
-# Klasör taraması (AI olmadan)
-python main.py --dir /path/to/project --no-ai
-```
 
 ---
 
-## Raporlama
+## Yanlış Pozitifları Bastırma (Suppression)
 
-Yapılan her analiz sonunda `reports/` klasörüne zaman damgalı `.txt` rapor kaydedilir:
-- `reports/code_review_YYYY_MM_DD_HHMM.txt` (Tek dosya raporu)
-- `reports/project_review_YYYY_MM_DD_HHMM.txt` (Toplu proje raporu)
+Kodunuzda uyarı almak istemediğiniz satırların sonuna `# noreview` veya `// noreview` ekleyebilirsiniz:
+
+```python
+API_KEY = "dummy_test_key"  # noreview
+```
+
+```javascript
+element.innerHTML = userInput; // noreview
+```
