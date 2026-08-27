@@ -171,13 +171,13 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans text-base">
+    <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col font-sans text-base">
       {/* HEADER */}
       <Header />
 
       {/* PROMINENT ANIMATED NEON PROGRESS BAR */}
       {loading && (
-        <div className="w-full bg-slate-900 h-2.5 relative overflow-hidden shadow-xl">
+        <div className="w-full bg-slate-800 h-2.5 relative overflow-hidden shadow-xl">
           <div
             className="h-full bg-gradient-to-r from-cyan-400 via-indigo-500 to-purple-500 transition-all duration-300 ease-out shadow-lg shadow-indigo-500/80"
             style={{ width: `${progressPct}%` }}
@@ -187,17 +187,17 @@ export default function Home() {
 
       {/* MAIN HERO CANVAS (WIDE MAX-W-7XL) */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-6 md:p-10 flex flex-col gap-8">
-        {/* HERO COMMAND CENTER BAR */}
-        <div className="bg-slate-900/90 border border-indigo-500/20 rounded-2xl p-5 backdrop-blur-2xl shadow-2xl shadow-indigo-950/40">
+        {/* HERO COMMAND CENTER BAR (SLATE-800 / BRIGHT BLUE ACCENT) */}
+        <div className="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-5 backdrop-blur-2xl shadow-2xl shadow-slate-950/50">
           <div className="flex flex-wrap items-center justify-between gap-6">
             {/* MODE SELECTION TABS */}
-            <div className="flex items-center gap-2 bg-slate-950 p-2 rounded-xl border border-slate-800">
+            <div className="flex items-center gap-2 bg-slate-950/80 p-2 rounded-xl border border-slate-700/80">
               <button
                 onClick={() => setMode('single')}
                 className={`flex items-center gap-2.5 px-5 py-3 rounded-lg text-sm font-bold transition-all ${
                   mode === 'single'
                     ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-600/40'
-                    : 'text-slate-400 hover:text-slate-200'
+                    : 'text-slate-300 hover:text-white'
                 }`}
               >
                 <FileCode2 className="w-4 h-4" />
@@ -209,7 +209,7 @@ export default function Home() {
                 className={`flex items-center gap-2.5 px-5 py-3 rounded-lg text-sm font-bold transition-all ${
                   mode === 'directory'
                     ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-600/40'
-                    : 'text-slate-400 hover:text-slate-200'
+                    : 'text-slate-300 hover:text-white'
                 }`}
               >
                 <FolderTree className="w-4 h-4" />
@@ -221,7 +221,7 @@ export default function Home() {
                 className={`flex items-center gap-2.5 px-5 py-3 rounded-lg text-sm font-bold transition-all ${
                   mode === 'zip'
                     ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-600/40'
-                    : 'text-slate-400 hover:text-slate-200'
+                    : 'text-slate-300 hover:text-white'
                 }`}
               >
                 <FileArchive className="w-4 h-4" />
@@ -230,7 +230,7 @@ export default function Home() {
             </div>
 
             {/* INLINE CONFIGURATION PILLS */}
-            <div className="flex items-center gap-6 bg-slate-950 px-5 py-2.5 rounded-xl border border-slate-800">
+            <div className="flex items-center gap-6 bg-slate-950/80 px-5 py-2.5 rounded-xl border border-slate-700/80">
               {/* AI TOGGLE */}
               <div className="flex items-center gap-3">
                 <Bot className="w-5 h-5 text-purple-400" />
@@ -246,7 +246,7 @@ export default function Home() {
                 </label>
               </div>
 
-              {enableAi && <div className="w-px h-5 bg-slate-800" />}
+              {enableAi && <div className="w-px h-5 bg-slate-700" />}
 
               {enableAi && (
                 <div className="flex items-center gap-2">
@@ -261,7 +261,7 @@ export default function Home() {
                 </div>
               )}
 
-              <div className="w-px h-5 bg-slate-800" />
+              <div className="w-px h-5 bg-slate-700" />
 
               {/* CONFIDENCE SLIDER */}
               <div className="flex items-center gap-3">
@@ -282,11 +282,11 @@ export default function Home() {
           </div>
         </div>
 
-        {/* INPUT STUDIO CANVAS */}
-        <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-8 shadow-2xl relative">
+        {/* INPUT STUDIO CANVAS (BRIGHTER SLATE) */}
+        <div className="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-8 shadow-2xl relative">
           {mode === 'single' && (
             <div className="space-y-6">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+              <div className="flex items-center justify-between border-b border-slate-700 pb-4">
                 <div className="flex gap-3">
                   <button
                     onClick={() => setSingleInputType('upload')}
@@ -312,7 +312,7 @@ export default function Home() {
               </div>
 
               {singleInputType === 'upload' ? (
-                <div className="border-2 border-dashed border-slate-800 hover:border-indigo-500/50 rounded-xl p-12 text-center transition bg-slate-950/80">
+                <div className="border-2 border-dashed border-slate-700 hover:border-indigo-400 rounded-xl p-12 text-center transition bg-slate-950/80">
                   <input
                     type="file"
                     onChange={(e) => setUploadedFile(e.target.files?.[0] || null)}
@@ -320,7 +320,7 @@ export default function Home() {
                     id="single-file-input"
                   />
                   <label htmlFor="single-file-input" className="cursor-pointer flex flex-col items-center gap-4">
-                    <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shadow-xl">
+                    <div className="w-16 h-16 rounded-2xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-indigo-300 shadow-xl">
                       <Upload className="w-8 h-8" />
                     </div>
                     <span className="text-base font-bold text-slate-100">
@@ -335,7 +335,7 @@ export default function Home() {
                     value={pastedCode}
                     onChange={(e) => setPastedCode(e.target.value)}
                     rows={10}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-5 font-mono text-sm text-slate-200 focus:outline-none focus:border-indigo-500 leading-relaxed"
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl p-5 font-mono text-sm text-slate-100 focus:outline-none focus:border-indigo-500 leading-relaxed"
                     placeholder="Analiz edilecek kaynak kodu buraya yapıştırın..."
                   />
                 </div>
@@ -351,13 +351,13 @@ export default function Home() {
                 value={dirPathInput}
                 onChange={(e) => setDirPathInput(e.target.value)}
                 placeholder="./examples veya /Users/kullanici/Desktop/proje"
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-5 py-4 text-sm text-slate-100 font-mono focus:outline-none focus:border-indigo-500"
+                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-5 py-4 text-sm text-slate-100 font-mono focus:outline-none focus:border-indigo-500"
               />
             </div>
           )}
 
           {mode === 'zip' && (
-            <div className="border-2 border-dashed border-slate-800 hover:border-indigo-500/50 rounded-xl p-12 text-center transition bg-slate-950/80">
+            <div className="border-2 border-dashed border-slate-700 hover:border-indigo-400 rounded-xl p-12 text-center transition bg-slate-950/80">
               <input
                 type="file"
                 accept=".zip"
@@ -366,7 +366,7 @@ export default function Home() {
                 id="zip-file-input"
               />
               <label htmlFor="zip-file-input" className="cursor-pointer flex flex-col items-center gap-4">
-                <div className="w-16 h-16 rounded-2xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400 shadow-xl">
+                <div className="w-16 h-16 rounded-2xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-purple-300 shadow-xl">
                   <Upload className="w-8 h-8" />
                 </div>
                 <span className="text-base font-bold text-slate-100">
@@ -386,15 +386,15 @@ export default function Home() {
 
           {/* STATUS & PROGRESS BAR DISPLAY WHEN LOADING */}
           {loading && (
-            <div className="mt-6 bg-indigo-600/10 border border-indigo-500/30 rounded-xl p-5 text-sm text-indigo-300 space-y-3">
+            <div className="mt-6 bg-indigo-600/15 border border-indigo-500/40 rounded-xl p-5 text-sm text-indigo-200 space-y-3">
               <div className="flex items-center justify-between font-mono">
-                <span className="flex items-center gap-3">
-                  <div className="w-4 h-4 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin shrink-0" />
+                <span className="flex items-center gap-3 font-semibold">
+                  <div className="w-4 h-4 border-2 border-indigo-300 border-t-transparent rounded-full animate-spin shrink-0" />
                   {statusText}
                 </span>
-                <span className="font-bold text-base">{progressPct}%</span>
+                <span className="font-bold text-base text-indigo-300">{progressPct}%</span>
               </div>
-              <div className="w-full bg-slate-950 rounded-full h-3 overflow-hidden border border-slate-800">
+              <div className="w-full bg-slate-950 rounded-full h-3 overflow-hidden border border-slate-700">
                 <div
                   className="bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 h-full transition-all duration-300 rounded-full"
                   style={{ width: `${progressPct}%` }}
@@ -430,19 +430,19 @@ export default function Home() {
           <div className="space-y-6 mt-4">
             {/* METRICS ROW */}
             <div className="grid grid-cols-4 gap-5">
-              <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
+              <div className="bg-slate-800/90 border border-slate-700 rounded-xl p-5">
                 <span className="text-xs text-slate-400 block mb-1 font-semibold">Dil / Language</span>
                 <span className="text-xl font-bold text-slate-100 uppercase">{singleResult.static.language}</span>
               </div>
-              <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
+              <div className="bg-slate-800/90 border border-slate-700 rounded-xl p-5">
                 <span className="text-xs text-slate-400 block mb-1 font-semibold">Statik Bulgular</span>
                 <span className="text-xl font-bold text-indigo-400">{singleResult.static.findings.length}</span>
               </div>
-              <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
+              <div className="bg-slate-800/90 border border-slate-700 rounded-xl p-5">
                 <span className="text-xs text-slate-400 block mb-1 font-semibold">AI Insights</span>
                 <span className="text-xl font-bold text-purple-400">{singleResult.ai.findings?.length || 0}</span>
               </div>
-              <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
+              <div className="bg-slate-800/90 border border-slate-700 rounded-xl p-5">
                 <span className="text-xs text-slate-400 block mb-1 font-semibold">AI Durumu</span>
                 <span className="text-sm font-bold text-emerald-400">
                   {singleResult.ai.skipped ? 'Atlandı' : 'Tamamlandı'}
@@ -451,7 +451,7 @@ export default function Home() {
             </div>
 
             {/* TABS */}
-            <div className="border-b border-slate-800 flex gap-8">
+            <div className="border-b border-slate-700 flex gap-8">
               <button
                 onClick={() => setActiveTab('static')}
                 className={`pb-4 text-base font-bold flex items-center gap-2 border-b-2 transition ${
@@ -507,7 +507,7 @@ export default function Home() {
                   </div>
                 )}
                 {singleResult.static.findings.length === 0 ? (
-                  <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-8 text-center text-base text-emerald-400 flex items-center justify-center gap-3">
+                  <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-8 text-center text-base text-emerald-400 flex items-center justify-center gap-3">
                     <CheckCircle2 className="w-6 h-6" />
                     <span>Statik analiz herhangi bir ihlal tespit etmedi.</span>
                   </div>
@@ -532,7 +532,7 @@ export default function Home() {
                     <span>⚠️ AI İncelemesi Hatası: {singleResult.ai.error}</span>
                   </div>
                 ) : !singleResult.ai.findings || singleResult.ai.findings.length === 0 ? (
-                  <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-8 text-center text-base text-emerald-400 flex items-center justify-center gap-3">
+                  <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-8 text-center text-base text-emerald-400 flex items-center justify-center gap-3">
                     <CheckCircle2 className="w-6 h-6" />
                     <span>✅ AI modeli bu dosyayı inceledi ve herhangi bir hata/risk bulamadı.</span>
                   </div>
@@ -573,12 +573,12 @@ export default function Home() {
         {/* DIRECTORY / ZIP RESULT VIEW */}
         {dirResult && (
           <div className="space-y-6 mt-4">
-            <div className="flex items-center justify-between bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl">
+            <div className="flex items-center justify-between bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-xl">
               <div>
                 <h3 className="text-xl font-bold text-slate-100 mb-1">
                   Proje: {dirResult.directory}
                 </h3>
-                <p className="text-sm text-slate-400">
+                <p className="text-sm text-slate-300">
                   Toplam {dirResult.total_files} dosya taranarak analiz edildi.
                 </p>
               </div>
@@ -595,33 +595,33 @@ export default function Home() {
               {dirResult.results.map((item, idx) => {
                 const isOpen = activeExpanderFile === item.filepath;
                 return (
-                  <div key={idx} className="border border-slate-800 rounded-xl overflow-hidden bg-slate-900">
+                  <div key={idx} className="border border-slate-700 rounded-xl overflow-hidden bg-slate-800/90">
                     <button
                       onClick={() => setActiveExpanderFile(isOpen ? null : item.filepath)}
-                      className="w-full px-6 py-5 flex items-center justify-between hover:bg-slate-800/80 transition text-left"
+                      className="w-full px-6 py-5 flex items-center justify-between hover:bg-slate-700/80 transition text-left"
                     >
                       <div className="flex items-center gap-4">
                         <ChevronRight className={`w-5 h-5 text-slate-400 transition-transform ${isOpen ? 'rotate-90' : ''}`} />
                         <span className="font-mono text-sm font-bold text-slate-100">{item.filepath}</span>
-                        <span className="text-xs uppercase font-mono px-3 py-1 rounded-md bg-slate-800 text-slate-300 border border-slate-700 font-bold">
+                        <span className="text-xs uppercase font-mono px-3 py-1 rounded-md bg-slate-900 text-slate-200 border border-slate-700 font-bold">
                           {item.language}
                         </span>
                       </div>
                       <div className="flex items-center gap-3 font-mono text-sm">
-                        <span className="text-red-400 bg-red-500/10 px-3 py-1 rounded-lg border border-red-500/20 font-bold">
+                        <span className="text-red-400 bg-red-500/20 px-3 py-1 rounded-lg border border-red-500/30 font-bold">
                           H:{item.high_count}
                         </span>
-                        <span className="text-amber-400 bg-amber-500/10 px-3 py-1 rounded-lg border border-amber-500/20 font-bold">
+                        <span className="text-amber-400 bg-amber-500/20 px-3 py-1 rounded-lg border border-amber-500/30 font-bold">
                           M:{item.medium_count}
                         </span>
-                        <span className="text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-lg border border-emerald-500/20 font-bold">
+                        <span className="text-emerald-400 bg-emerald-500/20 px-3 py-1 rounded-lg border border-emerald-500/30 font-bold">
                           L:{item.low_count}
                         </span>
                       </div>
                     </button>
 
                     {isOpen && (
-                      <div className="p-6 border-t border-slate-800 space-y-6 bg-slate-950">
+                      <div className="p-6 border-t border-slate-700 space-y-6 bg-slate-950">
                         {/* STATİK ANALİZ BULGULARI */}
                         <div>
                           <h4 className="text-sm font-bold text-slate-200 uppercase tracking-wider mb-3 flex items-center gap-2">
@@ -629,7 +629,7 @@ export default function Home() {
                             <span>Statik Analiz Bulguları ({item.static.findings.length})</span>
                           </h4>
                           {item.static.findings.length === 0 ? (
-                            <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-4 text-sm text-emerald-400 flex items-center gap-2">
+                            <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4 text-sm text-emerald-400 flex items-center gap-2">
                               <CheckCircle2 className="w-5 h-5" />
                               <span>Statik analiz herhangi bir hata tespit etmedi.</span>
                             </div>
@@ -647,17 +647,17 @@ export default function Home() {
                             <span>AI Review Bulguları ({item.ai.findings?.length || 0})</span>
                           </h4>
                           {item.ai.skipped ? (
-                            <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 text-sm text-amber-300 flex items-center gap-3 font-mono">
+                            <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 text-sm text-amber-300 flex items-center gap-3 font-mono">
                               <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0" />
                               <span>⚠️ AI İncelemesi Atlandı (Token/Rate Sınırı): {item.ai.error || 'Kota sınırı.'}</span>
                             </div>
                           ) : item.ai.error ? (
-                            <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 text-sm text-amber-300 flex items-center gap-3 font-mono">
+                            <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 text-sm text-amber-300 flex items-center gap-3 font-mono">
                               <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0" />
                               <span>⚠️ AI Hatası: {item.ai.error}</span>
                             </div>
                           ) : !item.ai.findings || item.ai.findings.length === 0 ? (
-                            <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-4 text-sm text-emerald-400 flex items-center gap-3 font-mono">
+                            <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4 text-sm text-emerald-400 flex items-center gap-3 font-mono">
                               <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
                               <span>✅ AI modeli bu dosyayı başarıyla inceledi ve herhangi bir hata bulamadı.</span>
                             </div>
@@ -678,7 +678,7 @@ export default function Home() {
       </main>
 
       {/* FOOTER STATUS BAR */}
-      <footer className="bg-slate-950 border-t border-slate-800 px-8 py-3 flex items-center justify-between text-xs font-mono text-slate-400">
+      <footer className="bg-slate-950 border-t border-slate-800 px-8 py-3.5 flex items-center justify-between text-xs font-mono text-slate-300">
         <div className="flex items-center gap-4">
           <span className="flex items-center gap-2 text-emerald-400 font-bold">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
