@@ -15,24 +15,24 @@ export const FindingCard: React.FC<Props> = ({ finding, source = 'static' }) => 
     switch (sev) {
       case 'HIGH':
         return {
-          border: 'border-red-500/30 border-l-red-500',
-          bg: 'bg-red-500/5 hover:bg-red-500/10',
-          badge: 'bg-red-500/20 text-red-300 border-red-500/30',
-          icon: <AlertTriangle className="w-4 h-4 text-red-400" />
+          border: 'border-red-500/40 border-l-red-500',
+          bg: 'bg-red-500/10 hover:bg-red-500/15',
+          badge: 'bg-red-500/20 text-red-300 border-red-500/40',
+          icon: <AlertTriangle className="w-5 h-5 text-red-400" />
         };
       case 'MEDIUM':
         return {
-          border: 'border-amber-500/30 border-l-amber-500',
-          bg: 'bg-amber-500/5 hover:bg-amber-500/10',
-          badge: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
-          icon: <AlertCircle className="w-4 h-4 text-amber-400" />
+          border: 'border-amber-500/40 border-l-amber-500',
+          bg: 'bg-amber-500/10 hover:bg-amber-500/15',
+          badge: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
+          icon: <AlertCircle className="w-5 h-5 text-amber-400" />
         };
       default:
         return {
-          border: 'border-emerald-500/30 border-l-emerald-500',
-          bg: 'bg-emerald-500/5 hover:bg-emerald-500/10',
-          badge: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
-          icon: <Info className="w-4 h-4 text-emerald-400" />
+          border: 'border-emerald-500/40 border-l-emerald-500',
+          bg: 'bg-emerald-500/10 hover:bg-emerald-500/15',
+          badge: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
+          icon: <Info className="w-5 h-5 text-emerald-400" />
         };
     }
   };
@@ -45,37 +45,37 @@ export const FindingCard: React.FC<Props> = ({ finding, source = 'static' }) => 
     : 'Genel';
 
   return (
-    <div className={`border border-l-4 ${style.border} ${style.bg} rounded-xl p-4 transition-all duration-200 shadow-sm mb-3`}>
-      <div className="flex items-center justify-between gap-3 mb-2">
-        <div className="flex items-center gap-2">
+    <div className={`border border-l-4 ${style.border} ${style.bg} rounded-xl p-5 transition-all duration-200 shadow-md mb-3.5`}>
+      <div className="flex items-center justify-between gap-3 mb-2.5">
+        <div className="flex items-center gap-2.5">
           {style.icon}
-          <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-md border ${style.badge}`}>
+          <span className={`text-xs font-bold px-3 py-1 rounded-md border uppercase font-mono ${style.badge}`}>
             [{sev}] {finding.category}
           </span>
-          <span className="text-xs font-mono text-slate-400 bg-slate-900/60 border border-slate-800 px-2 py-0.5 rounded">
+          <span className="text-xs font-mono text-slate-300 bg-slate-900 border border-slate-700 px-2.5 py-1 rounded-md font-bold">
             {lineDisplay}
           </span>
           {source === 'ai' && (
-            <span className="text-[10px] flex items-center gap-1 font-mono text-purple-300 bg-purple-500/10 border border-purple-500/20 px-2 py-0.5 rounded">
-              <Sparkles className="w-3 h-3" /> AI Insight
+            <span className="text-xs flex items-center gap-1 font-mono text-purple-300 bg-purple-500/20 border border-purple-500/40 px-2.5 py-1 rounded-md font-bold">
+              <Sparkles className="w-3.5 h-3.5" /> AI Insight
             </span>
           )}
         </div>
-        <span className="text-xs text-slate-500 font-mono">
+        <span className="text-xs text-slate-400 font-mono font-semibold">
           güven: {confidencePct}%
         </span>
       </div>
 
-      <p className="text-sm text-slate-200 leading-relaxed font-normal">
+      <p className="text-base text-slate-100 font-medium leading-relaxed my-2">
         {finding.message}
       </p>
 
       {finding.suggestion && (
-        <div className="mt-3 bg-slate-950/80 border border-slate-800/80 rounded-lg p-3 text-xs font-mono text-sky-300 flex items-start gap-2">
-          <Code2 className="w-4 h-4 text-sky-400 shrink-0 mt-0.5" />
+        <div className="mt-3.5 bg-slate-950 border border-slate-800 rounded-xl p-4 text-xs font-mono text-sky-300 flex items-start gap-3">
+          <Code2 className="w-5 h-5 text-sky-400 shrink-0 mt-0.5" />
           <div>
             <span className="text-slate-400 font-bold block mb-1">Öneri / Çözüm:</span>
-            {finding.suggestion}
+            <span className="text-sm font-sans text-sky-200">{finding.suggestion}</span>
           </div>
         </div>
       )}
