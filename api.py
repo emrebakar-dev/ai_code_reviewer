@@ -7,12 +7,19 @@ from fastapi import FastAPI, File, UploadFile, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 from analyzer import StaticAnalyzer
 from llm_reviewer import LLMReviewer, AIReviewResult
 from scanner import ProjectScanner
 from reporter import Reporter, ProjectReporter
 
 app = FastAPI(title="AI Code Reviewer API", version="1.0.0")
+
 
 app.add_middleware(
     CORSMiddleware,
