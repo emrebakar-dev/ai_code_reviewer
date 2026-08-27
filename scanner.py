@@ -7,7 +7,12 @@ from typing import List, Tuple
 from analyzer import StaticAnalyzer, StaticAnalysisResult
 from llm_reviewer import LLMReviewer, AIReviewResult
 
-SUPPORTED_EXTENSIONS = (".py", ".c", ".cpp", ".cc", ".cxx", ".h", ".hpp", ".java")
+SUPPORTED_EXTENSIONS = (
+    ".py", ".c", ".cpp", ".cc", ".cxx", ".h", ".hpp", ".java",
+    ".css", ".html", ".htm", ".js", ".jsx", ".ts", ".tsx"
+)
+
+
 
 SKIP_DIRS = {
     "__pycache__", ".git", ".hg", ".svn",

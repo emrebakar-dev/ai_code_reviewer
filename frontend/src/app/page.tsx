@@ -326,7 +326,7 @@ export default function Home() {
                     <span className="text-base font-bold text-slate-100">
                       {uploadedFile ? uploadedFile.name : 'Dosyanızı Buraya Bırakın veya Seçin'}
                     </span>
-                    <span className="text-xs text-slate-400">Desteklenen diller: Python (.py), C/C++ (.cpp), Java (.java)</span>
+                    <span className="text-xs text-slate-400">Desteklenen diller: Python (.py), C/C++ (.cpp), Java (.java), Web (.css, .html, .js, .ts)</span>
                   </label>
                 </div>
               ) : (

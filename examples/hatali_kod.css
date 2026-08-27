@@ -1,0 +1,14 @@
+/* Örnek hatalı CSS dosyası */
+body {
+    background-color: #ffffff !important;
+    font-family: Arial, sans-serif !important;
+    color: #333 !important;
+    margin: 0 !important;
+}
+
+@import url("http://fonts.googleapis.com/css?family=Roboto");
+
+.modal {
+    position: fixed;
+    z-index: 999999;
+}

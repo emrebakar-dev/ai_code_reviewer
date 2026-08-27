@@ -116,12 +116,19 @@ class StaticAnalyzer:
             return CPPAnalyzer().analyze(filepath, source_code)
         elif ext == "java":
             return JavaAnalyzer().analyze(filepath, source_code)
+        elif ext == "css":
+            return CSSAnalyzer().analyze(filepath, source_code)
+        elif ext in ("html", "htm"):
+            return HTMLAnalyzer().analyze(filepath, source_code)
+        elif ext in ("js", "jsx", "ts", "tsx", "mjs"):
+            return JSAnalyzer().analyze(filepath, source_code)
         else:
             return PythonAnalyzer().analyze(filepath, source_code)
 
     def _read_file(self, filepath: str) -> str:
         with open(filepath, "r", encoding="utf-8", errors="replace") as f:
             return f.read()
+
 
 
 class PythonAnalyzer:
@@ -692,3 +699,208 @@ class _NestingDepthCalculator(ast.NodeVisitor):
     def visit_Try(self, node):       self._enter(node)
     def visit_AsyncFor(self, node):  self._enter(node)
     def visit_AsyncWith(self, node): self._enter(node)
+
+
+class CSSAnalyzer:
+    """CSS Statik Analizör sınıfı."""
+
+    def analyze(self, filepath: str, source_code: str) -> StaticAnalysisResult:
+        result = StaticAnalysisResult(filepath=filepath, source_code=source_code, language="css")
+        lines = source_code.splitlines()
+        result.total_lines = len(lines)
+        findings = []
+
+        open_braces = source_code.count("{")
+        close_braces = source_code.count("}")
+        if open_braces != close_braces:
+            result.syntax_error = f"CSS süslü parantez dengesizliği: {open_braces} açılan '{{' vs {close_braces} kapanan '}}'."
+
+        important_count = 0
+        for i, line in enumerate(lines, 1):
+            line_str = line.strip()
+
+            if "!important" in line_str:
+                important_count += 1
+                if important_count > 3:
+                    findings.append(Finding(
+                        severity="MEDIUM",
+                        category="Code Quality",
+                        line=i,
+                        message="Aşırı '!important' kullanımı tespit edildi.",
+                        suggestion="CSS özgüllüğünü (specificity) artırmak için '!important' yerine daha spesifik seçiciler kullanın.",
+                        confidence=0.9
+                    ))
+
+            if "http://" in line_str and not line_str.startswith("/*"):
+                findings.append(Finding(
+                    severity="HIGH",
+                    category="Security",
+                    line=i,
+                    message="Güvensiz HTTP kaynağı (font/image/asset) çağrılıyor.",
+                    suggestion="Tarayıcının 'Mixed Content' engellemesini önlemek için HTTPS protokolü ('https://') kullanın.",
+                    confidence=1.0
+                ))
+
+            if line_str.startswith("@import"):
+                findings.append(Finding(
+                    severity="MEDIUM",
+                    category="Performance",
+                    line=i,
+                    message="@import kullanımı sayfa yüklenme performansını olumsuz etkiler.",
+                    suggestion="CSS dosyalarını HTML içerisinde <link rel='stylesheet'> ile paralel yükleyin.",
+                    confidence=0.85
+                ))
+
+            if "z-index" in line_str:
+                match = re.search(r"z-index\s*:\s*(\d+)", line_str)
+                if match and int(match.group(1)) >= 9999:
+                    findings.append(Finding(
+                        severity="LOW",
+                        category="Maintainability",
+                        line=i,
+                        message=f"Aşırı yüksek z-index değeri: {match.group(1)}.",
+                        suggestion="Düzenli bir katman (stacking context) mimarisi oluşturun ve z-index değerlerini makul seviyede tutun.",
+                        confidence=0.9
+                    ))
+
+        result.findings = _postprocess_findings(findings, lines)
+        return result
+
+
+class HTMLAnalyzer:
+    """HTML Statik Analizör sınıfı."""
+
+    def analyze(self, filepath: str, source_code: str) -> StaticAnalysisResult:
+        result = StaticAnalysisResult(filepath=filepath, source_code=source_code, language="html")
+        lines = source_code.splitlines()
+        result.total_lines = len(lines)
+        findings = []
+
+        for i, line in enumerate(lines, 1):
+            line_str = line.strip()
+
+            if re.search(r'on\w+\s*=\s*["\']', line_str, re.IGNORECASE):
+                findings.append(Finding(
+                    severity="MEDIUM",
+                    category="Security",
+                    line=i,
+                    message="Satır içi (inline) JavaScript olay dinleyicisi (event handler) tespiti.",
+                    suggestion="Güvenlik (CSP) ve sürdürülebilirlik için olay dinleyicilerini ayrı JS dosyalarında addEventListener ile ekleyin.",
+                    confidence=0.9
+                ))
+
+            if 'target="_blank"' in line_str or "target='_blank'" in line_str:
+                if 'rel="noopener' not in line_str and "rel='noopener" not in line_str:
+                    findings.append(Finding(
+                        severity="MEDIUM",
+                        category="Security",
+                        line=i,
+                        message="'target=\"_blank\"' kullanımında 'rel=\"noopener noreferrer\"' eksik.",
+                        suggestion="Tabnabbing ve performans açıklarını önlemek için rel=\"noopener noreferrer\" ekleyin.",
+                        confidence=1.0
+                    ))
+
+            if re.search(r'<(script|link)\s+[^>]*src=["\']http://', line_str, re.IGNORECASE):
+                findings.append(Finding(
+                    severity="HIGH",
+                    category="Security",
+                    line=i,
+                    message="Güvensiz HTTP script/style kaynağı dahil ediliyor.",
+                    suggestion="Ortadaki adam (MitM) saldırılarını önlemek için yalnızca HTTPS protokolünü kullanın.",
+                    confidence=1.0
+                ))
+
+            if "<img" in line_str and "alt=" not in line_str:
+                findings.append(Finding(
+                    severity="LOW",
+                    category="Accessibility",
+                    line=i,
+                    message="<img> etiketinde 'alt' özniteliği eksik.",
+                    suggestion="Erişilebilirlik ve SEO için resimlere açıklayıcı 'alt' metni ekleyin.",
+                    confidence=0.85
+                ))
+
+        result.findings = _postprocess_findings(findings, lines)
+        return result
+
+
+class JSAnalyzer:
+    """JavaScript / TypeScript Statik Analizör sınıfı."""
+
+    def analyze(self, filepath: str, source_code: str) -> StaticAnalysisResult:
+        result = StaticAnalysisResult(filepath=filepath, source_code=source_code, language="javascript")
+        lines = source_code.splitlines()
+        result.total_lines = len(lines)
+        findings = []
+
+        for i, line in enumerate(lines, 1):
+            line_str = line.strip()
+
+            if "innerHTML" in line_str:
+                findings.append(Finding(
+                    severity="HIGH",
+                    category="Security",
+                    line=i,
+                    message="'innerHTML' kullanımı XSS (Cross-Site Scripting) zafiyeti riski taşır.",
+                    suggestion="'textContent', 'innerText' veya güvenli DOM oluşturma metotlarını (createElement) tercih edin.",
+                    confidence=0.95
+                ))
+
+            if "document.write(" in line_str:
+                findings.append(Finding(
+                    severity="HIGH",
+                    category="Security",
+                    line=i,
+                    message="'document.write()' kullanımı güvensizdir ve sayfa performansını bozar.",
+                    suggestion="DOM manipülasyonları için modern W3C DOM API'lerini kullanın.",
+                    confidence=1.0
+                ))
+
+            if "eval(" in line_str:
+                findings.append(Finding(
+                    severity="HIGH",
+                    category="Security",
+                    line=i,
+                    message="Tehlikeli 'eval()' fonksiyonu kullanımı.",
+                    suggestion="Dinamik kod çalıştırmaktan kaçının; güvenlik ve optimizasyon sorunlarına yol açar.",
+                    confidence=1.0
+                ))
+
+            if re.search(r"localStorage\.(setItem|getItem)\s*\(\s*['\"](token|auth|password|secret)", line_str, re.IGNORECASE):
+                findings.append(Finding(
+                    severity="MEDIUM",
+                    category="Security",
+                    line=i,
+                    message="Hassas veriler (token/şifre) localStorage üzerinde saklanıyor.",
+                    suggestion="XSS saldırılarında çalınmaması için oturum jetonlarını HttpOnly Cookie içinde saklayın.",
+                    confidence=0.9
+                ))
+
+            for keyword in SECRET_KEYWORDS:
+                if f"{keyword}" in line_str.lower() and "=" in line_str:
+                    match = re.search(r'["\']([A-Za-z0-9+/=_\-]{12,})["\']', line_str)
+                    if match:
+                        val = match.group(1)
+                        if val.lower() not in PLACEHOLDER_VALUES and SECRET_VALUE_PATTERN.match(val):
+                            findings.append(Finding(
+                                severity="HIGH",
+                                category="Security",
+                                line=i,
+                                message=f"Hard-coded JS '{keyword}' değeri tespit edildi.",
+                                suggestion="Hassas anahtarları frontend kodunda tutmayın; ortam değişkenleri veya backend API üzerinden kullanın.",
+                                confidence=0.85
+                            ))
+
+            if "console.log(" in line_str:
+                if any(k in line_str.lower() for k in ["pass", "token", "user", "data", "key"]):
+                    findings.append(Finding(
+                        severity="LOW",
+                        category="Code Quality",
+                        line=i,
+                        message="Hassas olabilecek veri 'console.log' ile tarayıcı konsoluna yazdırılıyor.",
+                        suggestion="Üretim ortamına çıkmadan önce konsol loglarını kaldırın veya log seviyelerini düzenleyin.",
+                        confidence=0.75
+                    ))
+
+        result.findings = _postprocess_findings(findings, lines)
+        return result
