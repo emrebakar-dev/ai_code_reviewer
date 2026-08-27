@@ -23,9 +23,8 @@ import {
   FileArchive,
   Bot,
   Sliders,
-  Sparkle,
-  Terminal,
-  Zap
+  AlertTriangle,
+  Info
 } from 'lucide-react';
 
 const API_BASE = 'http://localhost:8000/api';
@@ -46,6 +45,7 @@ export default function Home() {
   // States
   const [loading, setLoading] = useState<boolean>(false);
   const [statusText, setStatusText] = useState<string>('Analiz ediliyor...');
+  const [progressPct, setProgressPct] = useState<number>(0);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [singleResult, setSingleResult] = useState<SingleAnalyzeResponse | null>(null);
   const [dirResult, setDirResult] = useState<DirectoryAnalyzeResponse | null>(null);
@@ -57,6 +57,7 @@ export default function Home() {
     setErrorMsg(null);
     setSingleResult(null);
     setDirResult(null);
+    setProgressPct(20);
 
     try {
       if (mode === 'single') {
@@ -74,6 +75,7 @@ export default function Home() {
         }
 
         setStatusText(`${fileNameToSend} analiz ediliyor...`);
+        setProgressPct(50);
 
         const res = await fetch(`${API_BASE}/analyze/code`, {
           method: 'POST',
@@ -92,6 +94,7 @@ export default function Home() {
           throw new Error(errData.detail || 'Analiz sırasında hata oluştu.');
         }
 
+        setProgressPct(90);
         const data: SingleAnalyzeResponse = await res.json();
         setSingleResult(data);
       } else if (mode === 'directory') {
@@ -99,7 +102,8 @@ export default function Home() {
           throw new Error('Lütfen taranacak klasör yolunu girin.');
         }
 
-        setStatusText(`"${dirPathInput.trim()}" projesi taranıyor...`);
+        setStatusText(`"${dirPathInput.trim()}" klasörü taranıyor ve analiz ediliyor...`);
+        setProgressPct(40);
 
         const res = await fetch(`${API_BASE}/analyze/directory`, {
           method: 'POST',
@@ -117,6 +121,7 @@ export default function Home() {
           throw new Error(errData.detail || 'Klasör tarama hatası.');
         }
 
+        setProgressPct(90);
         const data: DirectoryAnalyzeResponse = await res.json();
         setDirResult(data);
       } else if (mode === 'zip') {
@@ -124,7 +129,8 @@ export default function Home() {
           throw new Error('Lütfen bir .zip dosyası yükleyin.');
         }
 
-        setStatusText(`${zipFile.name} ZIP arşivi taranıyor...`);
+        setStatusText(`${zipFile.name} ZIP arşivi çıkarılıyor ve taranıyor...`);
+        setProgressPct(30);
 
         const formData = new FormData();
         formData.append('file', zipFile);
@@ -142,13 +148,16 @@ export default function Home() {
           throw new Error(errData.detail || 'ZIP analiz hatası.');
         }
 
+        setProgressPct(90);
         const data: DirectoryAnalyzeResponse = await res.json();
         setDirResult(data);
       }
+      setProgressPct(100);
     } catch (err: any) {
       setErrorMsg(err.message || 'Bilinmeyen bir hata oluştu.');
     } finally {
       setLoading(false);
+      setTimeout(() => setProgressPct(0), 1000);
     }
   };
 
@@ -163,33 +172,36 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-[#070A11] text-slate-100 flex flex-col font-sans selection:bg-indigo-500/30">
-      {/* HEADER WITH GITHUB LINK */}
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-indigo-500/30 text-sm">
+      {/* HEADER */}
       <Header />
 
-      {/* NEON TOP PROGRESS BAR */}
+      {/* PROMINENT TOP ANIMATED NEON PROGRESS BAR */}
       {loading && (
-        <div className="w-full h-1 bg-slate-900 overflow-hidden relative">
-          <div className="w-full h-full bg-gradient-to-r from-blue-500 via-purple-500 to-emerald-500 animate-pulse" />
+        <div className="w-full bg-slate-900 h-2 relative overflow-hidden shadow-md">
+          <div
+            className="h-full bg-gradient-to-r from-cyan-400 via-indigo-500 to-purple-500 transition-all duration-300 ease-out shadow-lg shadow-indigo-500/50"
+            style={{ width: `${progressPct}%` }}
+          />
         </div>
       )}
 
-      {/* MAIN SINGLE HERO CANVAS (NO SIDEBAR!) */}
+      {/* MAIN SINGLE HERO CANVAS */}
       <main className="flex-1 max-w-6xl w-full mx-auto p-6 md:p-8 flex flex-col gap-6">
-        {/* HERO COMMAND CENTER (UNIFIED TOP BAR) */}
-        <div className="bg-[#0D1322]/80 border border-slate-800/80 rounded-2xl p-3 backdrop-blur-xl shadow-2xl shadow-indigo-950/20">
+        {/* HERO COMMAND CENTER */}
+        <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 backdrop-blur-xl shadow-xl shadow-black/40">
           <div className="flex flex-wrap items-center justify-between gap-4">
             {/* MODE SELECTION TABS */}
-            <div className="flex items-center gap-1 bg-[#070A11] p-1 rounded-xl border border-slate-800/80">
+            <div className="flex items-center gap-1.5 bg-slate-950 p-1.5 rounded-xl border border-slate-800">
               <button
                 onClick={() => setMode('single')}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all ${
                   mode === 'single'
-                    ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md shadow-indigo-600/30'
+                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-indigo-600/30'
                     : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
-                <FileCode2 className="w-3.5 h-3.5" />
+                <FileCode2 className="w-4 h-4" />
                 <span>Tek Dosya / Kod</span>
               </button>
 
@@ -197,11 +209,11 @@ export default function Home() {
                 onClick={() => setMode('directory')}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all ${
                   mode === 'directory'
-                    ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md shadow-indigo-600/30'
+                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-indigo-600/30'
                     : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
-                <FolderTree className="w-3.5 h-3.5" />
+                <FolderTree className="w-4 h-4" />
                 <span>Yerel Klasör Yolu</span>
               </button>
 
@@ -209,21 +221,21 @@ export default function Home() {
                 onClick={() => setMode('zip')}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all ${
                   mode === 'zip'
-                    ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md shadow-indigo-600/30'
+                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-indigo-600/30'
                     : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
-                <FileArchive className="w-3.5 h-3.5" />
+                <FileArchive className="w-4 h-4" />
                 <span>Proje ZIP</span>
               </button>
             </div>
 
             {/* INLINE CONFIGURATION PILLS */}
-            <div className="flex items-center gap-4 bg-[#070A11] px-4 py-1.5 rounded-xl border border-slate-800/80">
+            <div className="flex items-center gap-5 bg-slate-950 px-4 py-2 rounded-xl border border-slate-800">
               {/* AI TOGGLE */}
-              <div className="flex items-center gap-2">
-                <Bot className="w-3.5 h-3.5 text-purple-400" />
-                <span className="text-xs text-slate-300 font-medium">AI:</span>
+              <div className="flex items-center gap-2.5">
+                <Bot className="w-4 h-4 text-purple-400" />
+                <span className="text-xs text-slate-200 font-medium">Yapay Zekâ:</span>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input
                     type="checkbox"
@@ -231,30 +243,30 @@ export default function Home() {
                     onChange={(e) => setEnableAi(e.target.checked)}
                     className="sr-only peer"
                   />
-                  <div className="w-7 h-3.5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[1px] after:left-[1px] after:bg-slate-300 after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-purple-600"></div>
+                  <div className="w-8 h-4 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-300 after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-purple-600"></div>
                 </label>
               </div>
 
-              {enableAi && <div className="w-px h-3.5 bg-slate-800" />}
+              {enableAi && <div className="w-px h-4 bg-slate-800" />}
 
               {enableAi && (
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[11px] text-slate-400">Model:</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-slate-400">Model:</span>
                   <input
                     type="text"
                     value={selectedModel}
                     onChange={(e) => setSelectedModel(e.target.value)}
-                    className="bg-transparent text-xs text-slate-200 font-mono w-32 border-none focus:outline-none focus:ring-0 text-purple-300"
+                    className="bg-transparent text-xs text-slate-200 font-mono w-36 border-none focus:outline-none focus:ring-0 text-purple-300 font-semibold"
                     placeholder="qwen/qwen3.6-27b"
                   />
                 </div>
               )}
 
-              <div className="w-px h-3.5 bg-slate-800" />
+              <div className="w-px h-4 bg-slate-800" />
 
               {/* CONFIDENCE SLIDER */}
-              <div className="flex items-center gap-2">
-                <Sliders className="w-3.5 h-3.5 text-indigo-400" />
+              <div className="flex items-center gap-2.5">
+                <Sliders className="w-4 h-4 text-indigo-400" />
                 <span className="text-xs text-slate-400">Güven:</span>
                 <span className="text-xs font-mono font-bold text-indigo-400">{confidenceThreshold.toFixed(2)}</span>
                 <input
@@ -264,22 +276,22 @@ export default function Home() {
                   step="0.05"
                   value={confidenceThreshold}
                   onChange={(e) => setConfidenceThreshold(parseFloat(e.target.value))}
-                  className="w-16 h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                  className="w-20 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500"
                 />
               </div>
             </div>
           </div>
         </div>
 
-        {/* INPUT HERO STUDIO */}
-        <div className="bg-[#0D1322]/80 border border-slate-800/80 rounded-2xl p-6 shadow-2xl relative overflow-hidden">
+        {/* INPUT STUDIO CANVAS */}
+        <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl relative">
           {mode === 'single' && (
             <div className="space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-800/60 pb-3">
+              <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
                 <div className="flex gap-2">
                   <button
                     onClick={() => setSingleInputType('upload')}
-                    className={`text-xs font-semibold px-3 py-1.5 rounded-lg border transition ${
+                    className={`text-xs font-semibold px-3.5 py-2 rounded-lg border transition ${
                       singleInputType === 'upload'
                         ? 'bg-indigo-600/20 border-indigo-500/50 text-indigo-300'
                         : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -289,7 +301,7 @@ export default function Home() {
                   </button>
                   <button
                     onClick={() => setSingleInputType('paste')}
-                    className={`text-xs font-semibold px-3 py-1.5 rounded-lg border transition ${
+                    className={`text-xs font-semibold px-3.5 py-2 rounded-lg border transition ${
                       singleInputType === 'paste'
                         ? 'bg-indigo-600/20 border-indigo-500/50 text-indigo-300'
                         : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -301,7 +313,7 @@ export default function Home() {
               </div>
 
               {singleInputType === 'upload' ? (
-                <div className="border-2 border-dashed border-slate-800/80 hover:border-indigo-500/50 rounded-xl p-10 text-center transition bg-[#070A11]/60">
+                <div className="border-2 border-dashed border-slate-800 hover:border-indigo-500/50 rounded-xl p-10 text-center transition bg-slate-950/60">
                   <input
                     type="file"
                     onChange={(e) => setUploadedFile(e.target.files?.[0] || null)}
@@ -309,13 +321,13 @@ export default function Home() {
                     id="single-file-input"
                   />
                   <label htmlFor="single-file-input" className="cursor-pointer flex flex-col items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+                    <div className="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 shadow-md">
                       <Upload className="w-6 h-6" />
                     </div>
                     <span className="text-sm font-semibold text-slate-200">
                       {uploadedFile ? uploadedFile.name : 'Dosyanızı Buraya Bırakın veya Seçin'}
                     </span>
-                    <span className="text-xs text-slate-500">Desteklenen formatlar: Python (.py), C/C++ (.cpp), Java (.java)</span>
+                    <span className="text-xs text-slate-400">Desteklenen diller: Python (.py), C/C++ (.cpp), Java (.java)</span>
                   </label>
                 </div>
               ) : (
@@ -323,8 +335,8 @@ export default function Home() {
                   <textarea
                     value={pastedCode}
                     onChange={(e) => setPastedCode(e.target.value)}
-                    rows={8}
-                    className="w-full bg-[#070A11] border border-slate-800/80 rounded-xl p-4 font-mono text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+                    rows={9}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 font-mono text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
                     placeholder="Analiz edilecek kaynak kodu buraya yapıştırın..."
                   />
                 </div>
@@ -333,20 +345,20 @@ export default function Home() {
           )}
 
           {mode === 'directory' && (
-            <div className="py-4">
-              <label className="text-xs text-slate-400 block mb-2 font-medium">Bilgisayarınızdaki Yerel Klasör Yolu:</label>
+            <div className="py-3">
+              <label className="text-xs text-slate-300 block mb-2 font-medium">Bilgisayarınızdaki Yerel Klasör Yolu:</label>
               <input
                 type="text"
                 value={dirPathInput}
                 onChange={(e) => setDirPathInput(e.target.value)}
                 placeholder="./examples veya /Users/kullanici/Desktop/proje"
-                className="w-full bg-[#070A11] border border-slate-800/80 rounded-xl px-4 py-3.5 text-xs text-slate-200 font-mono focus:outline-none focus:border-indigo-500"
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3.5 text-xs text-slate-200 font-mono focus:outline-none focus:border-indigo-500"
               />
             </div>
           )}
 
           {mode === 'zip' && (
-            <div className="border-2 border-dashed border-slate-800/80 hover:border-indigo-500/50 rounded-xl p-10 text-center transition bg-[#070A11]/60">
+            <div className="border-2 border-dashed border-slate-800 hover:border-indigo-500/50 rounded-xl p-10 text-center transition bg-slate-950/60">
               <input
                 type="file"
                 accept=".zip"
@@ -355,28 +367,40 @@ export default function Home() {
                 id="zip-file-input"
               />
               <label htmlFor="zip-file-input" className="cursor-pointer flex flex-col items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
+                <div className="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 shadow-md">
                   <Upload className="w-6 h-6" />
                 </div>
                 <span className="text-sm font-semibold text-slate-200">
                   {zipFile ? zipFile.name : 'ZIP Arşivini Buraya Bırakın veya Seçin'}
                 </span>
-                <span className="text-xs text-slate-500">Tüm proje otomatik taranır ve raporlanır</span>
+                <span className="text-xs text-slate-400">Tüm proje otomatik taranır ve raporlanır</span>
               </label>
             </div>
           )}
 
           {errorMsg && (
-            <div className="mt-4 bg-red-500/10 border border-red-500/30 rounded-xl p-3.5 text-xs text-red-400 flex items-center gap-2">
+            <div className="mt-4 bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-xs text-red-400 flex items-center gap-2">
               <AlertOctagon className="w-4 h-4 shrink-0" />
               <span>{errorMsg}</span>
             </div>
           )}
 
+          {/* STATUS & PROGRESS BAR DISPLAY WHEN LOADING */}
           {loading && (
-            <div className="mt-4 bg-indigo-500/10 border border-indigo-500/30 rounded-xl p-3.5 text-xs text-indigo-300 flex items-center gap-3">
-              <div className="w-4 h-4 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin shrink-0" />
-              <span className="font-mono">{statusText}</span>
+            <div className="mt-4 bg-indigo-600/10 border border-indigo-500/30 rounded-xl p-4 text-xs text-indigo-300 space-y-2">
+              <div className="flex items-center justify-between font-mono">
+                <span className="flex items-center gap-2">
+                  <div className="w-3.5 h-3.5 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin shrink-0" />
+                  {statusText}
+                </span>
+                <span className="font-bold">{progressPct}%</span>
+              </div>
+              <div className="w-full bg-slate-950 rounded-full h-2 overflow-hidden border border-slate-800">
+                <div
+                  className="bg-gradient-to-r from-blue-500 to-indigo-500 h-full transition-all duration-300 rounded-full"
+                  style={{ width: `${progressPct}%` }}
+                />
+              </div>
             </div>
           )}
 
@@ -385,7 +409,7 @@ export default function Home() {
             <button
               onClick={handleAnalyze}
               disabled={loading}
-              className="flex items-center gap-2 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-semibold text-xs px-8 py-3.5 rounded-xl shadow-xl shadow-indigo-600/25 transition disabled:opacity-50"
+              className="flex items-center gap-2.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-semibold text-xs px-8 py-3.5 rounded-xl shadow-xl shadow-indigo-600/25 transition disabled:opacity-50"
             >
               {loading ? (
                 <>
@@ -402,25 +426,25 @@ export default function Home() {
           </div>
         </div>
 
-        {/* RESULTS SECTION (PRESERVED FAVORITE DESIGN) */}
+        {/* RESULTS SECTION (SINGLE FILE) */}
         {singleResult && (
           <div className="space-y-6 mt-4">
             {/* METRICS ROW */}
             <div className="grid grid-cols-4 gap-4">
-              <div className="bg-[#0D1322]/80 border border-slate-800/80 rounded-xl p-4">
-                <span className="text-[11px] text-slate-400 block mb-1 font-medium">Dil / Language</span>
+              <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
+                <span className="text-xs text-slate-400 block mb-1 font-medium">Dil / Language</span>
                 <span className="text-lg font-bold text-slate-100 uppercase">{singleResult.static.language}</span>
               </div>
-              <div className="bg-[#0D1322]/80 border border-slate-800/80 rounded-xl p-4">
-                <span className="text-[11px] text-slate-400 block mb-1 font-medium">Statik Bulgular</span>
+              <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
+                <span className="text-xs text-slate-400 block mb-1 font-medium">Statik Bulgular</span>
                 <span className="text-lg font-bold text-indigo-400">{singleResult.static.findings.length}</span>
               </div>
-              <div className="bg-[#0D1322]/80 border border-slate-800/80 rounded-xl p-4">
-                <span className="text-[11px] text-slate-400 block mb-1 font-medium">AI Insights</span>
+              <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
+                <span className="text-xs text-slate-400 block mb-1 font-medium">AI Insights</span>
                 <span className="text-lg font-bold text-purple-400">{singleResult.ai.findings?.length || 0}</span>
               </div>
-              <div className="bg-[#0D1322]/80 border border-slate-800/80 rounded-xl p-4">
-                <span className="text-[11px] text-slate-400 block mb-1 font-medium">AI Durumu</span>
+              <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
+                <span className="text-xs text-slate-400 block mb-1 font-medium">AI Durumu</span>
                 <span className="text-xs font-semibold text-emerald-400">
                   {singleResult.ai.skipped ? 'Atlandı' : 'Tamamlandı'}
                 </span>
@@ -499,17 +523,19 @@ export default function Home() {
             {activeTab === 'ai' && (
               <div className="space-y-3">
                 {singleResult.ai.skipped ? (
-                  <div className="bg-[#0D1322] border border-slate-800 rounded-xl p-6 text-center text-xs text-slate-400">
-                    ℹ️ {singleResult.ai.error || 'AI İncelemesi atlandı.'}
+                  <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 text-xs text-amber-300 flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 shrink-0" />
+                    <span>⚠️ AI İncelemesi Atlandı (Token/API Sınırı): {singleResult.ai.error || 'API anahtarı eksik veya kota aşımı.'}</span>
                   </div>
                 ) : singleResult.ai.error ? (
-                  <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-xs text-red-400">
-                    ❌ {singleResult.ai.error}
+                  <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 text-xs text-amber-300 flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 shrink-0" />
+                    <span>⚠️ AI İncelemesi Hatası: {singleResult.ai.error}</span>
                   </div>
                 ) : !singleResult.ai.findings || singleResult.ai.findings.length === 0 ? (
                   <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-6 text-center text-sm text-emerald-400 flex items-center justify-center gap-2">
                     <CheckCircle2 className="w-5 h-5" />
-                    <span>AI modeli herhangi bir potansiyel problem tespit etmedi.</span>
+                    <span>✅ AI modeli bu dosyayı inceledi ve herhangi bir hata/risk bulamadı.</span>
                   </div>
                 ) : (
                   singleResult.ai.findings.map((f, i) => (
@@ -531,13 +557,13 @@ export default function Home() {
                 <div className="flex justify-end">
                   <button
                     onClick={() => downloadReport(singleResult.report, `report_${singleResult.filename}.txt`)}
-                    className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-4 py-2 rounded-lg font-medium transition"
+                    className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-4 py-2 rounded-lg font-semibold transition"
                   >
                     <Download className="w-4 h-4" />
                     <span>TXT Raporu İndir</span>
                   </button>
                 </div>
-                <pre className="bg-[#070A11] border border-slate-800/80 rounded-xl p-6 font-mono text-xs text-slate-300 overflow-x-auto max-h-[500px]">
+                <pre className="bg-slate-950 border border-slate-800 rounded-xl p-6 font-mono text-xs text-slate-300 overflow-x-auto max-h-[500px]">
                   {singleResult.report}
                 </pre>
               </div>
@@ -545,10 +571,10 @@ export default function Home() {
           </div>
         )}
 
-        {/* DIRECTORY / ZIP RESULT VIEW (PRESERVED FAVORITE EXPANDER CARDS) */}
+        {/* DIRECTORY / ZIP RESULT VIEW */}
         {dirResult && (
           <div className="space-y-6 mt-4">
-            <div className="flex items-center justify-between bg-[#0D1322]/90 border border-slate-800/80 rounded-xl p-6 shadow-xl">
+            <div className="flex items-center justify-between bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl">
               <div>
                 <h3 className="text-lg font-bold text-slate-100 mb-1">
                   Proje: {dirResult.directory}
@@ -570,15 +596,15 @@ export default function Home() {
               {dirResult.results.map((item, idx) => {
                 const isOpen = activeExpanderFile === item.filepath;
                 return (
-                  <div key={idx} className="border border-slate-800/80 rounded-xl overflow-hidden bg-[#0D1322]/60">
+                  <div key={idx} className="border border-slate-800 rounded-xl overflow-hidden bg-slate-900/90">
                     <button
                       onClick={() => setActiveExpanderFile(isOpen ? null : item.filepath)}
-                      className="w-full px-5 py-4 flex items-center justify-between hover:bg-slate-900/80 transition text-left"
+                      className="w-full px-5 py-4 flex items-center justify-between hover:bg-slate-800/80 transition text-left"
                     >
                       <div className="flex items-center gap-3">
-                        <ChevronRight className={`w-4 h-4 text-slate-500 transition-transform ${isOpen ? 'rotate-90' : ''}`} />
+                        <ChevronRight className={`w-4 h-4 text-slate-400 transition-transform ${isOpen ? 'rotate-90' : ''}`} />
                         <span className="font-mono text-xs font-semibold text-slate-200">{item.filepath}</span>
-                        <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-400">
+                        <span className="text-[10px] uppercase font-mono px-2.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
                           {item.language}
                         </span>
                       </div>
@@ -596,13 +622,18 @@ export default function Home() {
                     </button>
 
                     {isOpen && (
-                      <div className="p-5 border-t border-slate-800/80 space-y-4 bg-[#070A11]">
+                      <div className="p-5 border-t border-slate-800 space-y-5 bg-slate-950">
+                        {/* STATİK ANALİZ BULGULARI */}
                         <div>
-                          <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                            Statik Analiz Bulguları ({item.static.findings.length})
+                          <h4 className="text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2.5 flex items-center gap-2">
+                            <Shield className="w-4 h-4 text-indigo-400" />
+                            <span>Statik Analiz Bulguları ({item.static.findings.length})</span>
                           </h4>
                           {item.static.findings.length === 0 ? (
-                            <p className="text-xs text-emerald-400">Statik analiz bulgusu yok.</p>
+                            <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-lg p-3 text-xs text-emerald-400 flex items-center gap-2">
+                              <CheckCircle2 className="w-4 h-4" />
+                              <span>Statik analiz herhangi bir hata tespit etmedi.</span>
+                            </div>
                           ) : (
                             item.static.findings.map((f, i) => (
                               <FindingCard key={i} finding={f} source="static" />
@@ -610,16 +641,27 @@ export default function Home() {
                           )}
                         </div>
 
+                        {/* AI REVIEW BULGULARI (EXPLICIT DISTINCTION) */}
                         <div>
-                          <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                            AI Review Bulguları ({item.ai.findings?.length || 0})
+                          <h4 className="text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2.5 flex items-center gap-2">
+                            <Sparkles className="w-4 h-4 text-purple-400" />
+                            <span>AI Review Bulguları ({item.ai.findings?.length || 0})</span>
                           </h4>
                           {item.ai.skipped ? (
-                            <p className="text-xs text-slate-500">ℹ️ {item.ai.error}</p>
+                            <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3 text-xs text-amber-300 flex items-center gap-2 font-mono">
+                              <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+                              <span>⚠️ AI İncelemesi Atlandı (Token/Rate Sınırı): {item.ai.error || 'Kota sınırı.'}</span>
+                            </div>
                           ) : item.ai.error ? (
-                            <p className="text-xs text-red-400">❌ AI Hatası: {item.ai.error}</p>
+                            <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3 text-xs text-amber-300 flex items-center gap-2 font-mono">
+                              <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+                              <span>⚠️ AI Hatası: {item.ai.error}</span>
+                            </div>
                           ) : !item.ai.findings || item.ai.findings.length === 0 ? (
-                            <p className="text-xs text-emerald-400">AI inceleme bulgusu yok.</p>
+                            <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-lg p-3 text-xs text-emerald-400 flex items-center gap-2 font-mono">
+                              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                              <span>✅ AI modeli bu dosyayı başarıyla inceledi ve herhangi bir hata bulamadı.</span>
+                            </div>
                           ) : (
                             item.ai.findings.map((f, i) => (
                               <FindingCard key={i} finding={f} source="ai" />
@@ -636,14 +678,14 @@ export default function Home() {
         )}
       </main>
 
-      {/* FOOTER / STATUS BAR (PRESERVED FAVORITE) */}
-      <footer className="bg-[#05070D] border-t border-slate-800/80 px-6 py-2.5 flex items-center justify-between text-[11px] font-mono text-slate-500">
+      {/* FOOTER STATUS BAR (FAVORITE) */}
+      <footer className="bg-slate-950 border-t border-slate-800 px-6 py-2.5 flex items-center justify-between text-xs font-mono text-slate-400">
         <div className="flex items-center gap-4">
           <span className="flex items-center gap-1.5 text-emerald-400">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             FastAPI Server (Port 8000)
           </span>
-          <span className="text-slate-800">|</span>
+          <span className="text-slate-700">|</span>
           <span>Next.js Frontend (Port 3000)</span>
         </div>
         <div>
