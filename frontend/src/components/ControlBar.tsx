@@ -9,6 +9,7 @@ interface Props {
   setEnableAi: (b: boolean) => void;
   selectedModel: string;
   setSelectedModel: (s: string) => void;
+  availableModels?: string[];
   confidenceThreshold: number;
   setConfidenceThreshold: (n: number) => void;
 }
@@ -20,57 +21,61 @@ export const ControlBar: React.FC<Props> = ({
   setEnableAi,
   selectedModel,
   setSelectedModel,
+  availableModels = [
+    "qwen/qwen3.6-27b",
+    "groq/compound-mini",
+    "groq/compound",
+    "openai/gpt-oss-20b"
+  ],
   confidenceThreshold,
   setConfidenceThreshold,
 }) => {
   return (
-    <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-4 backdrop-blur-md mb-6 shadow-xl shadow-black/20">
-      <div className="flex flex-wrap items-center justify-between gap-4">
+    <div className="bg-slate-900/90 border border-slate-700/80 rounded-2xl p-5 backdrop-blur-2xl shadow-2xl shadow-slate-950/50">
+      <div className="flex flex-wrap items-center justify-between gap-6">
         {/* MODE SELECTOR (Segmented Control) */}
-        <div className="flex items-center gap-1.5 bg-slate-950/80 p-1.5 rounded-xl border border-slate-800">
+        <div className="flex items-center gap-2 bg-slate-950/80 p-2 rounded-xl border border-slate-700/80">
           <button
             onClick={() => setMode('single')}
-            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+            className={`flex items-center gap-2.5 px-5 py-3 rounded-lg text-sm font-bold transition-all ${
               mode === 'single'
-                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-indigo-500/20'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/50'
+                ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-600/40'
+                : 'text-slate-300 hover:text-white'
             }`}
           >
-            <FileCode2 className="w-3.5 h-3.5" />
+            <FileCode2 className="w-4 h-4" />
             <span>Tek Dosya / Kod</span>
           </button>
           <button
             onClick={() => setMode('directory')}
-            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+            className={`flex items-center gap-2.5 px-5 py-3 rounded-lg text-sm font-bold transition-all ${
               mode === 'directory'
-                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-indigo-500/20'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/50'
+                ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-600/40'
+                : 'text-slate-300 hover:text-white'
             }`}
           >
-            <FolderTree className="w-3.5 h-3.5" />
+            <FolderTree className="w-4 h-4" />
             <span>Yerel Klasör Yolu</span>
           </button>
           <button
             onClick={() => setMode('zip')}
-            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+            className={`flex items-center gap-2.5 px-5 py-3 rounded-lg text-sm font-bold transition-all ${
               mode === 'zip'
-                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-indigo-500/20'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/50'
+                ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-600/40'
+                : 'text-slate-300 hover:text-white'
             }`}
           >
-            <FileArchive className="w-3.5 h-3.5" />
-            <span>Proje (ZIP) Yükle</span>
+            <FileArchive className="w-4 h-4" />
+            <span>Proje ZIP</span>
           </button>
         </div>
 
         {/* AI & CONFIDENCE CONTROLS */}
-        <div className="flex items-center gap-6 bg-slate-950/80 px-4 py-2 rounded-xl border border-slate-800">
+        <div className="flex items-center gap-6 bg-slate-950/80 px-5 py-2.5 rounded-xl border border-slate-700/80">
           {/* AI TOGGLE */}
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5 text-xs font-medium text-slate-300">
-              <Bot className="w-4 h-4 text-purple-400" />
-              <span>Yapay Zekâ</span>
-            </div>
+            <Bot className="w-5 h-5 text-purple-400" />
+            <span className="text-sm text-slate-200 font-semibold">Yapay Zekâ:</span>
             <label className="relative inline-flex items-center cursor-pointer">
               <input
                 type="checkbox"
@@ -78,36 +83,37 @@ export const ControlBar: React.FC<Props> = ({
                 onChange={(e) => setEnableAi(e.target.checked)}
                 className="sr-only peer"
               />
-              <div className="w-8 h-4 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-300 after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-purple-600"></div>
+              <div className="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-300 after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-purple-600"></div>
             </label>
           </div>
 
-          {enableAi && (
-            <div className="h-4 w-px bg-slate-800" />
-          )}
+          {enableAi && <div className="w-px h-5 bg-slate-700" />}
 
+          {/* AI MODEL SELECTOR DROPDOWN */}
           {enableAi && (
             <div className="flex items-center gap-2">
-              <span className="text-[11px] text-slate-400">Model:</span>
-              <input
-                type="text"
+              <span className="text-xs text-slate-400 font-medium">Model:</span>
+              <select
                 value={selectedModel}
                 onChange={(e) => setSelectedModel(e.target.value)}
-                className="bg-slate-900 border border-slate-800 rounded-md px-2.5 py-1 text-xs text-slate-200 font-mono w-40 focus:outline-none focus:border-purple-500"
-                placeholder="qwen/qwen3.6-27b"
-              />
+                className="bg-slate-900 text-sm text-purple-300 font-mono border border-slate-700 rounded-lg px-3 py-1.5 focus:outline-none focus:border-purple-500 font-bold cursor-pointer"
+              >
+                {availableModels.map((m) => (
+                  <option key={m} value={m} className="bg-slate-900 text-slate-200 font-mono">
+                    {m}
+                  </option>
+                ))}
+              </select>
             </div>
           )}
 
-          <div className="h-4 w-px bg-slate-800" />
+          <div className="w-px h-5 bg-slate-700" />
 
           {/* CONFIDENCE SLIDER */}
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5 text-xs font-medium text-slate-300">
-              <Sliders className="w-3.5 h-3.5 text-indigo-400" />
-              <span>Güven Eşiği:</span>
-              <span className="font-mono text-indigo-400 text-xs font-bold">{confidenceThreshold.toFixed(2)}</span>
-            </div>
+            <Sliders className="w-4 h-4 text-indigo-400" />
+            <span className="text-xs text-slate-400 font-medium">Güven:</span>
+            <span className="text-sm font-mono font-bold text-indigo-400">{confidenceThreshold.toFixed(2)}</span>
             <input
               type="range"
               min="0"

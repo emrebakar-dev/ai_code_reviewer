@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Header } from '../components/Header';
+import { ControlBar } from '../components/ControlBar';
 import { FindingCard } from '../components/FindingCard';
 import { CodeViewer } from '../components/CodeViewer';
 import { Mode } from '../components/SidebarControls';
@@ -32,19 +33,25 @@ export default function Home() {
   const [mode, setMode] = useState<Mode>('single');
   const [enableAi, setEnableAi] = useState<boolean>(true);
   const [selectedModel, setSelectedModel] = useState<string>('qwen/qwen3.6-27b');
+  const [availableModels, setAvailableModels] = useState<string[]>([
+    "qwen/qwen3.6-27b",
+    "groq/compound-mini",
+    "groq/compound",
+    "openai/gpt-oss-20b"
+  ]);
   const [confidenceThreshold, setConfidenceThreshold] = useState<number>(0.0);
 
   // Inputs
   const [singleInputType, setSingleInputType] = useState<'upload' | 'paste'>('upload');
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [pastedCode, setPastedCode] = useState<string>('def calculate_sum(a, b):\n    return a + b\n');
-
   const [dirPathInput, setDirPathInput] = useState<string>('');
   const [zipFile, setZipFile] = useState<File | null>(null);
 
   // States
   const [loading, setLoading] = useState<boolean>(false);
   const [statusText, setStatusText] = useState<string>('Analiz ediliyor...');
+  const [currentFileScanning, setCurrentFileScanning] = useState<string>('');
   const [progressPct, setProgressPct] = useState<number>(0);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [singleResult, setSingleResult] = useState<SingleAnalyzeResponse | null>(null);
@@ -52,12 +59,30 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<'static' | 'ai' | 'code' | 'report'>('static');
   const [activeExpanderFile, setActiveExpanderFile] = useState<string | null>(null);
 
+  // Load available models from backend API
+  useEffect(() => {
+    fetch(`${API_BASE}/models`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.models && Array.isArray(data.models)) {
+          setAvailableModels(data.models);
+        }
+        if (data.default) {
+          setSelectedModel(data.default);
+        }
+      })
+      .catch(() => {
+        // Fallback to default array
+      });
+  }, []);
+
   const handleAnalyze = async () => {
     setLoading(true);
     setErrorMsg(null);
     setSingleResult(null);
     setDirResult(null);
-    setProgressPct(25);
+    setProgressPct(10);
+    setStatusText('Hazırlanıyor...');
 
     try {
       if (mode === 'single') {
@@ -74,8 +99,15 @@ export default function Home() {
           codeToSend = pastedCode;
         }
 
-        setStatusText(`${fileNameToSend} analiz ediliyor...`);
-        setProgressPct(55);
+        setCurrentFileScanning(fileNameToSend);
+        setStatusText(`[1/3] Statik Analiz Yapılıyor...`);
+        setProgressPct(35);
+        await new Promise((r) => setTimeout(r, 400));
+
+        if (enableAi) {
+          setStatusText(`[2/3] Yapay Zekâ (${selectedModel}) İncelemesi Sürüyor...`);
+          setProgressPct(65);
+        }
 
         const res = await fetch(`${API_BASE}/analyze/code`, {
           method: 'POST',
@@ -94,6 +126,7 @@ export default function Home() {
           throw new Error(errData.detail || 'Analiz sırasında hata oluştu.');
         }
 
+        setStatusText(`[3/3] Rapor Derleniyor...`);
         setProgressPct(90);
         const data: SingleAnalyzeResponse = await res.json();
         setSingleResult(data);
@@ -102,8 +135,13 @@ export default function Home() {
           throw new Error('Lütfen taranacak klasör yolunu girin.');
         }
 
-        setStatusText(`"${dirPathInput.trim()}" projesi taranıyor...`);
-        setProgressPct(45);
+        setCurrentFileScanning(dirPathInput.trim());
+        setStatusText(`[1/3] Klasör Ağacı Taranıyor...`);
+        setProgressPct(25);
+        await new Promise((r) => setTimeout(r, 400));
+
+        setStatusText(`[2/3] Dosyalar Statik & AI Analizinden Geçiriliyor...`);
+        setProgressPct(60);
 
         const res = await fetch(`${API_BASE}/analyze/directory`, {
           method: 'POST',
@@ -121,6 +159,7 @@ export default function Home() {
           throw new Error(errData.detail || 'Klasör tarama hatası.');
         }
 
+        setStatusText(`[3/3] Proje Bulguları Birleştiriliyor...`);
         setProgressPct(90);
         const data: DirectoryAnalyzeResponse = await res.json();
         setDirResult(data);
@@ -129,8 +168,13 @@ export default function Home() {
           throw new Error('Lütfen bir .zip dosyası yükleyin.');
         }
 
-        setStatusText(`${zipFile.name} ZIP arşivi taranıyor...`);
-        setProgressPct(35);
+        setCurrentFileScanning(zipFile.name);
+        setStatusText(`[1/3] ZIP Arşivi Çıkarılıyor...`);
+        setProgressPct(20);
+        await new Promise((r) => setTimeout(r, 400));
+
+        setStatusText(`[2/3] Proje Dosyaları Taranıyor...`);
+        setProgressPct(65);
 
         const formData = new FormData();
         formData.append('file', zipFile);
@@ -148,6 +192,7 @@ export default function Home() {
           throw new Error(errData.detail || 'ZIP analiz hatası.');
         }
 
+        setStatusText(`[3/3] Proje Raporu Oluşturuluyor...`);
         setProgressPct(90);
         const data: DirectoryAnalyzeResponse = await res.json();
         setDirResult(data);
@@ -157,7 +202,10 @@ export default function Home() {
       setErrorMsg(err.message || 'Bilinmeyen bir hata oluştu.');
     } finally {
       setLoading(false);
-      setTimeout(() => setProgressPct(0), 1000);
+      setTimeout(() => {
+        setProgressPct(0);
+        setCurrentFileScanning('');
+      }, 1000);
     }
   };
 
@@ -172,13 +220,13 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col font-sans text-base">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans text-base">
       {/* HEADER */}
       <Header />
 
       {/* PROMINENT ANIMATED NEON PROGRESS BAR */}
       {loading && (
-        <div className="w-full bg-slate-800 h-2.5 relative overflow-hidden shadow-xl">
+        <div className="w-full bg-slate-900 h-3 relative overflow-hidden shadow-xl border-b border-indigo-500/30">
           <div
             className="h-full bg-gradient-to-r from-cyan-400 via-indigo-500 to-purple-500 transition-all duration-300 ease-out shadow-lg shadow-indigo-500/80"
             style={{ width: `${progressPct}%` }}
@@ -186,108 +234,26 @@ export default function Home() {
         </div>
       )}
 
-      {/* MAIN HERO CANVAS (WIDE MAX-W-7XL) */}
+      {/* MAIN HERO CANVAS */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-6 md:p-10 flex flex-col gap-8">
-        {/* HERO COMMAND CENTER BAR (SLATE-800 / BRIGHT BLUE ACCENT) */}
-        <div className="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-5 backdrop-blur-2xl shadow-2xl shadow-slate-950/50">
-          <div className="flex flex-wrap items-center justify-between gap-6">
-            {/* MODE SELECTION TABS */}
-            <div className="flex items-center gap-2 bg-slate-950/80 p-2 rounded-xl border border-slate-700/80">
-              <button
-                onClick={() => setMode('single')}
-                className={`flex items-center gap-2.5 px-5 py-3 rounded-lg text-sm font-bold transition-all ${
-                  mode === 'single'
-                    ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-600/40'
-                    : 'text-slate-300 hover:text-white'
-                }`}
-              >
-                <FileCode2 className="w-4 h-4" />
-                <span>Tek Dosya / Kod</span>
-              </button>
+        {/* HERO COMMAND CENTER BAR WITH DROPDOWN */}
+        <ControlBar
+          mode={mode}
+          setMode={setMode}
+          enableAi={enableAi}
+          setEnableAi={setEnableAi}
+          selectedModel={selectedModel}
+          setSelectedModel={setSelectedModel}
+          availableModels={availableModels}
+          confidenceThreshold={confidenceThreshold}
+          setConfidenceThreshold={setConfidenceThreshold}
+        />
 
-              <button
-                onClick={() => setMode('directory')}
-                className={`flex items-center gap-2.5 px-5 py-3 rounded-lg text-sm font-bold transition-all ${
-                  mode === 'directory'
-                    ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-600/40'
-                    : 'text-slate-300 hover:text-white'
-                }`}
-              >
-                <FolderTree className="w-4 h-4" />
-                <span>Yerel Klasör Yolu</span>
-              </button>
-
-              <button
-                onClick={() => setMode('zip')}
-                className={`flex items-center gap-2.5 px-5 py-3 rounded-lg text-sm font-bold transition-all ${
-                  mode === 'zip'
-                    ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-600/40'
-                    : 'text-slate-300 hover:text-white'
-                }`}
-              >
-                <FileArchive className="w-4 h-4" />
-                <span>Proje ZIP</span>
-              </button>
-            </div>
-
-            {/* INLINE CONFIGURATION PILLS */}
-            <div className="flex items-center gap-6 bg-slate-950/80 px-5 py-2.5 rounded-xl border border-slate-700/80">
-              {/* AI TOGGLE */}
-              <div className="flex items-center gap-3">
-                <Bot className="w-5 h-5 text-purple-400" />
-                <span className="text-sm text-slate-200 font-semibold">Yapay Zekâ:</span>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={enableAi}
-                    onChange={(e) => setEnableAi(e.target.checked)}
-                    className="sr-only peer"
-                  />
-                  <div className="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-300 after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-purple-600"></div>
-                </label>
-              </div>
-
-              {enableAi && <div className="w-px h-5 bg-slate-700" />}
-
-              {enableAi && (
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-slate-400 font-medium">Model:</span>
-                  <input
-                    type="text"
-                    value={selectedModel}
-                    onChange={(e) => setSelectedModel(e.target.value)}
-                    className="bg-transparent text-sm text-purple-300 font-mono w-44 border-none focus:outline-none focus:ring-0 font-bold"
-                    placeholder="qwen/qwen3.6-27b"
-                  />
-                </div>
-              )}
-
-              <div className="w-px h-5 bg-slate-700" />
-
-              {/* CONFIDENCE SLIDER */}
-              <div className="flex items-center gap-3">
-                <Sliders className="w-4 h-4 text-indigo-400" />
-                <span className="text-xs text-slate-400 font-medium">Güven:</span>
-                <span className="text-sm font-mono font-bold text-indigo-400">{confidenceThreshold.toFixed(2)}</span>
-                <input
-                  type="range"
-                  min="0"
-                  max="1"
-                  step="0.05"
-                  value={confidenceThreshold}
-                  onChange={(e) => setConfidenceThreshold(parseFloat(e.target.value))}
-                  className="w-24 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* INPUT STUDIO CANVAS (BRIGHTER SLATE) */}
-        <div className="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-8 shadow-2xl relative">
+        {/* INPUT STUDIO CANVAS */}
+        <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-8 shadow-2xl relative">
           {mode === 'single' && (
             <div className="space-y-6">
-              <div className="flex items-center justify-between border-b border-slate-700 pb-4">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-4">
                 <div className="flex gap-3">
                   <button
                     onClick={() => setSingleInputType('upload')}
@@ -313,7 +279,7 @@ export default function Home() {
               </div>
 
               {singleInputType === 'upload' ? (
-                <div className="border-2 border-dashed border-slate-700 hover:border-indigo-400 rounded-xl p-12 text-center transition bg-slate-950/80">
+                <div className="border-2 border-dashed border-slate-800 hover:border-indigo-500/50 rounded-xl p-12 text-center transition bg-slate-950/80">
                   <input
                     type="file"
                     onChange={(e) => setUploadedFile(e.target.files?.[0] || null)}
@@ -321,7 +287,7 @@ export default function Home() {
                     id="single-file-input"
                   />
                   <label htmlFor="single-file-input" className="cursor-pointer flex flex-col items-center gap-4">
-                    <div className="w-16 h-16 rounded-2xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-indigo-300 shadow-xl">
+                    <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shadow-xl">
                       <Upload className="w-8 h-8" />
                     </div>
                     <span className="text-base font-bold text-slate-100">
@@ -336,7 +302,7 @@ export default function Home() {
                     value={pastedCode}
                     onChange={(e) => setPastedCode(e.target.value)}
                     rows={10}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl p-5 font-mono text-sm text-slate-100 focus:outline-none focus:border-indigo-500 leading-relaxed"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-5 font-mono text-sm text-slate-200 focus:outline-none focus:border-indigo-500 leading-relaxed"
                     placeholder="Analiz edilecek kaynak kodu buraya yapıştırın..."
                   />
                 </div>
@@ -352,13 +318,13 @@ export default function Home() {
                 value={dirPathInput}
                 onChange={(e) => setDirPathInput(e.target.value)}
                 placeholder="./examples veya /Users/kullanici/Desktop/proje"
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-5 py-4 text-sm text-slate-100 font-mono focus:outline-none focus:border-indigo-500"
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-5 py-4 text-sm text-slate-100 font-mono focus:outline-none focus:border-indigo-500"
               />
             </div>
           )}
 
           {mode === 'zip' && (
-            <div className="border-2 border-dashed border-slate-700 hover:border-indigo-400 rounded-xl p-12 text-center transition bg-slate-950/80">
+            <div className="border-2 border-dashed border-slate-800 hover:border-indigo-500/50 rounded-xl p-12 text-center transition bg-slate-950/80">
               <input
                 type="file"
                 accept=".zip"
@@ -367,7 +333,7 @@ export default function Home() {
                 id="zip-file-input"
               />
               <label htmlFor="zip-file-input" className="cursor-pointer flex flex-col items-center gap-4">
-                <div className="w-16 h-16 rounded-2xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-purple-300 shadow-xl">
+                <div className="w-16 h-16 rounded-2xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400 shadow-xl">
                   <Upload className="w-8 h-8" />
                 </div>
                 <span className="text-base font-bold text-slate-100">
@@ -385,26 +351,34 @@ export default function Home() {
             </div>
           )}
 
-          {/* STATUS & PROGRESS BAR DISPLAY WHEN LOADING */}
+          {/* DETAILED LIVE PROGRESS DISPLAY */}
           {loading && (
-            <div className="mt-6 bg-indigo-600/15 border border-indigo-500/40 rounded-xl p-5 text-sm text-indigo-200 space-y-3">
+            <div className="mt-6 bg-indigo-600/15 border border-indigo-500/40 rounded-xl p-5 text-sm text-indigo-200 space-y-3 shadow-lg">
               <div className="flex items-center justify-between font-mono">
-                <span className="flex items-center gap-3 font-semibold">
+                <div className="flex items-center gap-3 font-semibold">
                   <div className="w-4 h-4 border-2 border-indigo-300 border-t-transparent rounded-full animate-spin shrink-0" />
-                  {statusText}
-                </span>
-                <span className="font-bold text-base text-indigo-300">{progressPct}%</span>
+                  <div>
+                    <span className="block text-slate-100">{statusText}</span>
+                    {currentFileScanning && (
+                      <span className="block text-xs text-indigo-300 font-mono mt-0.5">
+                        📂 İncelenen Hedef: <strong className="text-purple-300">{currentFileScanning}</strong>
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <span className="font-bold text-lg text-indigo-300">{progressPct}%</span>
               </div>
-              <div className="w-full bg-slate-950 rounded-full h-3 overflow-hidden border border-slate-700">
+
+              <div className="w-full bg-slate-950 rounded-full h-3.5 overflow-hidden border border-slate-700/80 p-0.5">
                 <div
-                  className="bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 h-full transition-all duration-300 rounded-full"
+                  className="bg-gradient-to-r from-cyan-400 via-indigo-500 to-purple-500 h-full transition-all duration-300 rounded-full shadow-lg shadow-indigo-500/50"
                   style={{ width: `${progressPct}%` }}
                 />
               </div>
             </div>
           )}
 
-          {/* DEVA ACTION BUTTON */}
+          {/* ACTION BUTTON */}
           <div className="mt-8 flex justify-end">
             <button
               onClick={handleAnalyze}
@@ -431,19 +405,19 @@ export default function Home() {
           <div className="space-y-6 mt-4">
             {/* METRICS ROW */}
             <div className="grid grid-cols-4 gap-5">
-              <div className="bg-slate-800/90 border border-slate-700 rounded-xl p-5">
+              <div className="bg-slate-900/90 border border-slate-700 rounded-xl p-5">
                 <span className="text-xs text-slate-400 block mb-1 font-semibold">Dil / Language</span>
                 <span className="text-xl font-bold text-slate-100 uppercase">{singleResult.static.language}</span>
               </div>
-              <div className="bg-slate-800/90 border border-slate-700 rounded-xl p-5">
+              <div className="bg-slate-900/90 border border-slate-700 rounded-xl p-5">
                 <span className="text-xs text-slate-400 block mb-1 font-semibold">Statik Bulgular</span>
                 <span className="text-xl font-bold text-indigo-400">{singleResult.static.findings.length}</span>
               </div>
-              <div className="bg-slate-800/90 border border-slate-700 rounded-xl p-5">
+              <div className="bg-slate-900/90 border border-slate-700 rounded-xl p-5">
                 <span className="text-xs text-slate-400 block mb-1 font-semibold">AI Insights</span>
                 <span className="text-xl font-bold text-purple-400">{singleResult.ai.findings?.length || 0}</span>
               </div>
-              <div className="bg-slate-800/90 border border-slate-700 rounded-xl p-5">
+              <div className="bg-slate-900/90 border border-slate-700 rounded-xl p-5">
                 <span className="text-xs text-slate-400 block mb-1 font-semibold">AI Durumu</span>
                 <span className="text-sm font-bold text-emerald-400">
                   {singleResult.ai.skipped ? 'Atlandı' : 'Tamamlandı'}
@@ -574,7 +548,7 @@ export default function Home() {
         {/* DIRECTORY / ZIP RESULT VIEW */}
         {dirResult && (
           <div className="space-y-6 mt-4">
-            <div className="flex items-center justify-between bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-xl">
+            <div className="flex items-center justify-between bg-slate-900 border border-slate-700 rounded-xl p-6 shadow-xl">
               <div>
                 <h3 className="text-xl font-bold text-slate-100 mb-1">
                   Proje: {dirResult.directory}
@@ -596,15 +570,15 @@ export default function Home() {
               {dirResult.results.map((item, idx) => {
                 const isOpen = activeExpanderFile === item.filepath;
                 return (
-                  <div key={idx} className="border border-slate-700 rounded-xl overflow-hidden bg-slate-800/90">
+                  <div key={idx} className="border border-slate-700 rounded-xl overflow-hidden bg-slate-900/90">
                     <button
                       onClick={() => setActiveExpanderFile(isOpen ? null : item.filepath)}
-                      className="w-full px-6 py-5 flex items-center justify-between hover:bg-slate-700/80 transition text-left"
+                      className="w-full px-6 py-5 flex items-center justify-between hover:bg-slate-800/80 transition text-left"
                     >
                       <div className="flex items-center gap-4">
                         <ChevronRight className={`w-5 h-5 text-slate-400 transition-transform ${isOpen ? 'rotate-90' : ''}`} />
                         <span className="font-mono text-sm font-bold text-slate-100">{item.filepath}</span>
-                        <span className="text-xs uppercase font-mono px-3 py-1 rounded-md bg-slate-900 text-slate-200 border border-slate-700 font-bold">
+                        <span className="text-xs uppercase font-mono px-3 py-1 rounded-md bg-slate-950 text-slate-200 border border-slate-700 font-bold">
                           {item.language}
                         </span>
                       </div>
