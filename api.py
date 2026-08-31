@@ -61,12 +61,19 @@ def get_models():
         "models": available_models
     }
 
+def sanitize_filename(filename: str) -> str:
+    if not filename:
+        return "snippet.py"
+    # Path traversal ve kontrol karakterlerini engelle
+    clean = os.path.basename(filename).replace("\x00", "").strip()
+    return clean if clean else "snippet.py"
+
 @app.post("/api/analyze/code")
 def analyze_code(req: CodeAnalyzeRequest):
     if not req.code.strip():
         raise HTTPException(status_code=400, detail="Kod içeriği boş olamaz.")
 
-    safe_filename = os.path.basename(req.filename) if req.filename else "snippet.py"
+    safe_filename = sanitize_filename(req.filename)
     tmp_dir = tempfile.mkdtemp(prefix="aicr_single_")
     filepath = os.path.join(tmp_dir, safe_filename)
     
@@ -75,9 +82,7 @@ def analyze_code(req: CodeAnalyzeRequest):
             f.write(req.code)
 
         static_result = StaticAnalyzer().analyze(filepath)
-
         static_result.filepath = safe_filename
-
 
         ai_result_dict = {"skipped": True, "error": "AI incelemesi kapalı", "findings": [], "parse_failed": False}
 
@@ -85,7 +90,7 @@ def analyze_code(req: CodeAnalyzeRequest):
             reviewer = LLMReviewer()
             if req.model:
                 reviewer.model = req.model
-            res = reviewer.review(source_code=req.code, filepath=req.filename)
+            res = reviewer.review(source_code=req.code, filepath=safe_filename)
             ai_result_dict = {
                 "skipped": res.skipped,
                 "error": res.error,
@@ -107,14 +112,13 @@ def analyze_code(req: CodeAnalyzeRequest):
         reporter = Reporter(static_result, ai_obj)
         report_path = reporter.save_report()
 
-
         report_content = ""
         if os.path.exists(report_path):
             with open(report_path, "r", encoding="utf-8") as rf:
                 report_content = rf.read()
 
         return {
-            "filename": req.filename,
+            "filename": safe_filename,
             "static": {
                 "language": static_result.language,
                 "syntax_error": static_result.syntax_error,
@@ -124,8 +128,11 @@ def analyze_code(req: CodeAnalyzeRequest):
             "report": report_content,
             "report_path": report_path
         }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Analiz hatası: {str(e)}")
     finally:
         shutil.rmtree(tmp_dir, ignore_errors=True)
+
 
 @app.post("/api/analyze/directory")
 def analyze_directory(req: DirectoryAnalyzeRequest):
