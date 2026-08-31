@@ -23,11 +23,12 @@ app = FastAPI(title="AI Code Reviewer API", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:8000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 class CodeAnalyzeRequest(BaseModel):
     code: str
@@ -65,8 +66,9 @@ def analyze_code(req: CodeAnalyzeRequest):
     if not req.code.strip():
         raise HTTPException(status_code=400, detail="Kod içeriği boş olamaz.")
 
+    safe_filename = os.path.basename(req.filename) if req.filename else "snippet.py"
     tmp_dir = tempfile.mkdtemp(prefix="aicr_single_")
-    filepath = os.path.join(tmp_dir, req.filename)
+    filepath = os.path.join(tmp_dir, safe_filename)
     
     try:
         with open(filepath, "w", encoding="utf-8") as f:
@@ -74,7 +76,8 @@ def analyze_code(req: CodeAnalyzeRequest):
 
         static_result = StaticAnalyzer().analyze(filepath)
 
-        static_result.filepath = req.filename
+        static_result.filepath = safe_filename
+
 
         ai_result_dict = {"skipped": True, "error": "AI incelemesi kapalı", "findings": [], "parse_failed": False}
 
@@ -179,11 +182,13 @@ async def analyze_zip(
     model: Optional[str] = Form(None),
     confidence_threshold: float = Form(0.0)
 ):
-    if not file.filename.endswith(".zip"):
+    safe_filename = os.path.basename(file.filename) if file.filename else "project.zip"
+    if not safe_filename.endswith(".zip"):
         raise HTTPException(status_code=400, detail="Yalnızca .zip dosyaları desteklenir.")
 
     tmp_dir = tempfile.mkdtemp(prefix="aicr_zip_")
-    zip_path = os.path.join(tmp_dir, file.filename)
+    zip_path = os.path.join(tmp_dir, safe_filename)
+
 
     try:
         with open(zip_path, "wb") as buffer:

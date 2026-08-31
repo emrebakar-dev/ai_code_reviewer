@@ -37,7 +37,8 @@ export default function Home() {
   // Inputs
   const [singleInputType, setSingleInputType] = useState<'upload' | 'paste'>('upload');
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-  const [pastedCode, setPastedCode] = useState<string>('def hello():\n    eval("print(123)")\n');
+  const [pastedCode, setPastedCode] = useState<string>('def calculate_sum(a, b):\n    return a + b\n');
+
   const [dirPathInput, setDirPathInput] = useState<string>('');
   const [zipFile, setZipFile] = useState<File | null>(null);
 

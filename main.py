@@ -58,9 +58,9 @@ def parse_args():
     return parser.parse_args()
 
 
-def validate_file(filepath: str) -> bool:
-    if not os.path.isfile(filepath):
-        print(f"\n[!] Hata: Dosya bulunamadi: '{filepath}'")
+def validate_file(filepath: Optional[str]) -> bool:
+    if not filepath or not os.path.isfile(filepath):
+        print(f"\n[!] Hata: Gecerli bir dosya bulunamadi: '{filepath}'")
         return False
     ext = os.path.splitext(filepath)[1].lower()
     if ext not in SUPPORTED_EXTENSIONS:
@@ -68,10 +68,11 @@ def validate_file(filepath: str) -> bool:
         print("   Devam etmek icin Enter'a basin veya Ctrl+C ile cikin...")
         try:
             input()
-        except KeyboardInterrupt:
+        except (KeyboardInterrupt, EOFError):
             print("\nCikiliyor.")
             return False
     return True
+
 
 
 def run_single(filepath: str, no_ai: bool):
