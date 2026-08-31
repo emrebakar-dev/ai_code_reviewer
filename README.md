@@ -44,7 +44,19 @@ ai_code_reviewer/
 
 ---
 
+## Tek Tıkla Başlatma (En Kolay Yol)
+
+**Masaüstünden Tek Tıkla Başlatma:**
+Masaüstünüzde otomatik oluşan **`AI Code Reviewer.command`** kısayoluna çift tıklayın. 
+Sistem hem FastAPI backend'ini hem de Next.js frontend'ini otomatik başlatacak ve tarayıcınızda `http://localhost:3000` adresini açacaktır.
+
+**VS Code İçinden Başlatma:**
+VS Code içinde `Cmd + Shift + B` tuşlarına basarak **🚀 AI Code Reviewer Başlat** görevini seçebilirsiniz.
+
+---
+
 ## Kurulum
+
 
 ### 1. Depoyu Klonlayın
 ```bash
