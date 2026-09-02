@@ -8,9 +8,10 @@ from analyzer import StaticAnalyzer, StaticAnalysisResult
 from llm_reviewer import LLMReviewer, AIReviewResult
 
 SUPPORTED_EXTENSIONS = (
-    ".py", ".c", ".cpp", ".cc", ".cxx", ".h", ".hpp", ".java",
+    ".py", ".c", ".cpp", ".cc", ".cxx", ".h", ".hpp", ".java", ".cs",
     ".css", ".html", ".htm", ".js", ".jsx", ".ts", ".tsx"
 )
+
 
 
 

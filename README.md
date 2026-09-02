@@ -7,7 +7,9 @@ AI Code Reviewer, yazılımlarınızdaki güvenlik zafiyetlerini, kod kalitesi i
 ## Öne Çıkan Özellikler
 
 - **Çok Dilli Statik Analiz**:
+  - **C# (.cs)**: SQL Injection (SqlCommand string birleştirme), BinaryFormatter güvensiz deserialization (RCE), Process.Start komut enjeksiyonu, hardcoded Connection String / secret sızıntıları, boş catch blokları ve IDisposable resource leak tespiti.
   - **Python**: AST tabanlı analiz (eval/exec, subprocess shell=True, hardcoded secrets, bare except, cyclomatic complexity, uzun fonksiyonlar).
+
   - **C / C++**: Buffer overflow (strcpy/sprintf), format string açıkları, kabuk enjeksiyonu (system()), bellek yönetimi (RAII/unique_ptr önerisi).
   - **Java**: SQL Injection, güvensiz deserialization (readObject), printStackTrace sızıntıları, boş catch blokları, String == hataları.
   - **Web & Frontend (CSS / HTML / JS / TS)**:

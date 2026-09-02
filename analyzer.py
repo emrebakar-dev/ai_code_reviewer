@@ -116,8 +116,11 @@ class StaticAnalyzer:
             return CPPAnalyzer().analyze(filepath, source_code)
         elif ext == "java":
             return JavaAnalyzer().analyze(filepath, source_code)
+        elif ext == "cs":
+            return CSharpAnalyzer().analyze(filepath, source_code)
         elif ext == "css":
             return CSSAnalyzer().analyze(filepath, source_code)
+
         elif ext in ("html", "htm"):
             return HTMLAnalyzer().analyze(filepath, source_code)
         elif ext in ("js", "jsx", "ts", "tsx", "mjs"):
@@ -901,6 +904,98 @@ class JSAnalyzer:
                         suggestion="Üretim ortamına çıkmadan önce konsol loglarını kaldırın veya log seviyelerini düzenleyin.",
                         confidence=0.75
                     ))
+
+        result.findings = _postprocess_findings(findings, lines)
+        return result
+
+
+class CSharpAnalyzer:
+    """C# (.cs) Statik Analizör sınıfı."""
+
+    def analyze(self, filepath: str, source_code: str) -> StaticAnalysisResult:
+        result = StaticAnalysisResult(filepath=filepath, source_code=source_code, language="csharp")
+        lines = source_code.splitlines()
+        result.total_lines = len(lines)
+        findings = []
+
+        open_braces = source_code.count("{")
+        close_braces = source_code.count("}")
+        if open_braces != close_braces:
+            result.syntax_error = f"C# süslü parantez dengesizliği: {open_braces} açılan '{{' vs {close_braces} kapanan '}}'."
+
+        for i, line in enumerate(lines, 1):
+            line_str = line.strip()
+
+            # 1. SQL Injection
+            if re.search(r'new\s+SqlCommand\s*\(\s*["\'].*?\+\s*\w+|SELECT\s+.*?\+\s*\w+', line_str, re.IGNORECASE):
+                findings.append(Finding(
+                    severity="HIGH",
+                    category="Security",
+                    line=i,
+                    message="SQL Injection riski: SQL sorgusu string birleştirme ile oluşturuluyor.",
+                    suggestion="Parametreli sorgu kullanın: cmd.Parameters.AddWithValue(\"@param\", value);",
+                    confidence=0.95
+                ))
+
+            # 2. BinaryFormatter Deserialization
+            if "BinaryFormatter" in line_str and "Deserialize(" in line_str:
+                findings.append(Finding(
+                    severity="HIGH",
+                    category="Security",
+                    line=i,
+                    message="Güvensiz Deserialization: 'BinaryFormatter' uzaktan kod yürütümüne (RCE) yol açabilir.",
+                    suggestion="'BinaryFormatter' yerine System.Text.Json veya Newtonsoft.Json kullanın.",
+                    confidence=1.0
+                ))
+
+            # 3. Process.Start Command Injection
+            if "Process.Start(" in line_str and "+" in line_str:
+                findings.append(Finding(
+                    severity="HIGH",
+                    category="Security",
+                    line=i,
+                    message="Process.Start kullanımı: Kullanıcı girdisiyle komut birleştirme kabuk enjeksiyonuna yol açabilir.",
+                    suggestion="ProcessStartInfo.ArgumentList kullanarak argümanları güvenli şekilde geçirin.",
+                    confidence=0.9
+                ))
+
+            # 4. Hard-coded Connection String / Secrets
+            for keyword in SECRET_KEYWORDS:
+                if keyword in line_str.lower() and ("=" in line_str or "ConnectionString" in line_str):
+                    match = re.search(r'["\']([A-Za-z0-9+/=_\-]{12,})["\']', line_str)
+                    if match:
+                        val = match.group(1)
+                        if val.lower() not in PLACEHOLDER_VALUES and SECRET_VALUE_PATTERN.match(val):
+                            findings.append(Finding(
+                                severity="HIGH",
+                                category="Security",
+                                line=i,
+                                message=f"Hard-coded C# '{keyword}' veya bağlantı dizesi tespit edildi.",
+                                suggestion="Hassas anahtarları ve Connection String'leri appsettings.json veya Environment Variable üzerinden okuyun.",
+                                confidence=0.85
+                            ))
+
+            # 5. Empty Catch
+            if line_str.startswith("catch") and ("{ }" in line_str or "{}" in line_str):
+                findings.append(Finding(
+                    severity="MEDIUM",
+                    category="Code Quality",
+                    line=i,
+                    message="Boş 'catch' bloğu: Hata sessizce yutuluyor.",
+                    suggestion="Hataları loglayın: _logger.LogError(ex, \"Hata oluştu\");",
+                    confidence=0.95
+                ))
+
+            # 6. Missing Using Statement / IDisposable
+            if re.search(r'new\s+(StreamReader|FileStream|SqlConnection|HttpClient)\s*\(', line_str) and not line_str.startswith("using"):
+                findings.append(Finding(
+                    severity="MEDIUM",
+                    category="Performance",
+                    line=i,
+                    message="IDisposable nesnesi 'using' bloğu olmadan oluşturuluyor (Resource Leak riski).",
+                    suggestion="Bellek sızıntısını önlemek için 'using var resource = new ...' desenini kullanın.",
+                    confidence=0.85
+                ))
 
         result.findings = _postprocess_findings(findings, lines)
         return result

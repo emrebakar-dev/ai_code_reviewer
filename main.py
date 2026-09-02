@@ -15,7 +15,11 @@ from analyzer import StaticAnalyzer
 from llm_reviewer import LLMReviewer, AIReviewResult
 from reporter import Reporter, ProjectReporter
 
-SUPPORTED_EXTENSIONS = (".py", ".c", ".cpp", ".cc", ".cxx", ".h", ".hpp", ".java")
+SUPPORTED_EXTENSIONS = (
+    ".py", ".c", ".cpp", ".cc", ".cxx", ".h", ".hpp", ".java", ".cs",
+    ".css", ".html", ".htm", ".js", ".jsx", ".ts", ".tsx"
+)
+
 
 RED    = "\033[91m"
 YELLOW = "\033[93m"

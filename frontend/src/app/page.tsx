@@ -263,7 +263,7 @@ export default function Home() {
                         : 'border-transparent text-slate-400 hover:text-slate-200'
                     }`}
                   >
-                    Dosya Yükle (.py, .cpp, .java)
+                    Dosya Yükle (.py, .cs, .cpp, .java)
                   </button>
                   <button
                     onClick={() => setSingleInputType('paste')}
@@ -293,7 +293,7 @@ export default function Home() {
                     <span className="text-base font-bold text-slate-100">
                       {uploadedFile ? uploadedFile.name : 'Dosyanızı Buraya Bırakın veya Seçin'}
                     </span>
-                    <span className="text-xs text-slate-400">Desteklenen diller: Python (.py), C/C++ (.cpp), Java (.java), Web (.css, .html, .js, .ts)</span>
+                    <span className="text-xs text-slate-400">Desteklenen diller: C# (.cs), Python (.py), C/C++ (.cpp), Java (.java), Web (.css, .html, .js, .ts)</span>
                   </label>
                 </div>
               ) : (
