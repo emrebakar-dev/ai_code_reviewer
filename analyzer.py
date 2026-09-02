@@ -34,34 +34,34 @@ def _is_suppressed(line: str) -> bool:
 def _postprocess_findings(findings: list, original_lines: list) -> list:
     """
     1. # noreview / // noreview etiketli satırları siler.
-    2. Aynı (satır, kategori, mesaj-özeti) üçlüsünü tekrar eden bulguları tekilleştirir;
-       en yüksek severity olana öncelik verir.
+    2. Aynı (category, message) bilgisine sahip bulguları tek bir bulgu altında
+       birleştirir ve satır numaralarını 'lines' listesinde toplar.
     """
-    sev_order = {"HIGH": 3, "MEDIUM": 2, "LOW": 1}
-
     active = []
     for f in findings:
-        # f.line=0 falsy olur, bu yüzden 'is not None' kontrolü yapılmalı
         if f.line is not None and f.line <= len(original_lines):
             if _is_suppressed(original_lines[f.line - 1]):
                 continue
         active.append(f)
 
-    seen: dict = {}
-    deduped: list = []
-    for f in active:
-        # Mesajın ilk 40 karakteri de key'e dahil: farklı kategoriler çakışmasın
-        key = (f.line, f.category, f.message[:40])
-        if key not in seen:
-            seen[key] = len(deduped)
-            deduped.append(f)
-        else:
-            idx = seen[key]
-            existing = deduped[idx]
-            if sev_order.get(f.severity, 0) > sev_order.get(existing.severity, 0):
-                deduped[idx] = f
+    grouped: dict = {}
+    grouped_order: list = []
 
-    return deduped
+    for f in active:
+        key = (f.category, f.message.strip(), f.severity)
+        if key not in grouped:
+            # Satır numaralarını benzersiz ve sıralı tut
+            lines_set = [f.line] if f.line is not None else []
+            f.lines = lines_set
+            grouped[key] = f
+            grouped_order.append(f)
+        else:
+            existing = grouped[key]
+            if f.line is not None and f.line not in existing.lines:
+                existing.lines.append(f.line)
+                existing.lines.sort()
+
+    return grouped_order
 
 
 @dataclass
@@ -72,16 +72,19 @@ class Finding:
     message: str
     suggestion: Optional[str] = None
     confidence: float = 1.0
+    lines: list = field(default_factory=list)
 
     def to_dict(self) -> dict:
         return {
             "severity":   self.severity,
             "category":   self.category,
             "line":       self.line,
+            "lines":      self.lines if self.lines else ([self.line] if self.line is not None else []),
             "message":    self.message,
             "suggestion": self.suggestion,
             "confidence": self.confidence,
         }
+
 
 
 @dataclass

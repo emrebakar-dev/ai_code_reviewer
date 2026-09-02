@@ -2,11 +2,13 @@ export interface Finding {
   severity: "HIGH" | "MEDIUM" | "LOW" | string;
   category: string;
   line: number | null;
+  lines?: number[];
   line_range?: string | null;
   message: string;
   suggestion?: string | null;
   confidence: number;
 }
+
 
 export interface StaticResult {
   language: string;

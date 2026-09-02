@@ -38,11 +38,16 @@ export const FindingCard: React.FC<Props> = ({ finding, source = 'static' }) => 
   };
 
   const style = getStyle();
-  const lineDisplay = finding.line
+  
+  const hasMultipleLines = finding.lines && finding.lines.length > 1;
+  const lineDisplay = hasMultipleLines
+    ? `Satırlar: ${finding.lines!.join(', ')} (${finding.lines!.length} Yerde)`
+    : finding.line
     ? `Line ${finding.line}`
     : finding.line_range
     ? `Lines ${finding.line_range}`
     : 'Genel';
+
 
   return (
     <div className={`border border-l-4 ${style.border} ${style.bg} rounded-xl p-5 transition-all duration-200 shadow-md mb-3.5`}>

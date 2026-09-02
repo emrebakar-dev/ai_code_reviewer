@@ -68,16 +68,18 @@ class Reporter:
 
         if not self.static.findings:
             print(f"  {GREEN}[+] Statik analiz bulgusu yok.{RESET}")
-        else:
             for f in self.static.findings:
+                lines_attr = getattr(f, "lines", [])
+                line_str = ", ".join(str(l) for l in lines_attr) if len(lines_attr) > 1 else (str(f.line) if f.line else None)
                 self._print_finding(
                     severity=f.severity,
                     category=f.category,
-                    line=str(f.line) if f.line else None,
+                    line=line_str,
                     function_name=None,
                     message=f.message,
                     suggestion=f.suggestion,
                 )
+
 
     def _print_ai_findings(self):
         print(f"\n{BOLD}{'─' * WIDTH}{RESET}")
